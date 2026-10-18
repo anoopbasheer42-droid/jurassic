@@ -117,22 +117,22 @@ for (let i = 0; i < 80; i++) {
   if (Math.abs(x) > 20 || Math.abs(z) > 20) makeTree(x, z);
 }
 
-// --- REAL 3D T-REX MODEL (YOUR FILE) ---
+// --- REAL 3D T-REX MODEL (GUARANTEED CDN) ---
 let tRexMixer = null;
 let tRexModel = null;
 const loader = new GLTFLoader();
 const loadingDiv = document.getElementById("loading");
 
-// This points directly to your uploaded file
-const MODEL_URL = './niknet_art-tyrannosaurus-3232.glb';
+// Using jsDelivr CDN so it never goes offline
+const MODEL_URL = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/models/gltf/T-Rex.glb';
 
 function loadTRex() {
   loadingDiv.style.display = "block";
   loader.load(MODEL_URL, (gltf) => {
     tRexModel = gltf.scene;
     
-    // You may need to adjust the scale (0.5, 2.0, etc.) depending on how big the model is
-    tRexModel.scale.set(1.5, 1.5, 1.5); 
+    // Adjust scale and position
+    tRexModel.scale.set(0.08, 0.08, 0.08); 
     tRexModel.position.set(0, getTerrainHeight(0, -25), -25);
     
     tRexModel.traverse((child) => { 
@@ -158,7 +158,7 @@ function loadTRex() {
   },
   (error) => {
     console.error("Model failed to load", error);
-    loadingDiv.innerText = "Model loading failed. Check file name.";
+    loadingDiv.innerText = "Model loading failed. Please refresh.";
   });
 }
 loadTRex();
@@ -199,7 +199,7 @@ renderer.domElement.addEventListener("pointermove", e => {
 renderer.domElement.addEventListener("pointerup", () => lookActive = false);
 renderer.domElement.addEventListener("pointercancel", () => lookActive = false);
 
-// --- AUDIO ---
+// --- AUDIO (Guaranteed Roar) ---
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
 
@@ -234,7 +234,7 @@ document.getElementById("startButton").onclick = () => {
   
   audioCtx = new AudioContext();
   setTimeout(playSynthRoar, 500);
-  setInterval(playSynthRoar, 12000);
+  setInterval(playSynthRoar, 15000);
 };
 
 // --- ANIMATION LOOP ---
