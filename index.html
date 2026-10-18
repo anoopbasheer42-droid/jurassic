@@ -38,26 +38,31 @@ canvas { display: block; }
 
 <audio id="roarSound" src="https://actions.google.com/sounds/v1/animals/trex_roar.ogg" preload="auto"></audio>
 
-<!-- Plain JavaScript so the button ALWAYS works -->
+<!-- 1. Plain JS for the button so it never crashes -->
 <script>
   document.getElementById("startButton").addEventListener("click", function() {
     document.getElementById("start").style.display = "none";
     if (document.documentElement.requestFullscreen) {
       document.documentElement.requestFullscreen().catch(() => {});
     }
-    // Trigger the first roar
     const audio = document.getElementById("roarSound");
     audio.volume = 1.0;
-    audio.play().catch(e => console.log("Audio blocked"));
+    audio.play().catch(e => {});
+    
+    // Loop the roar
+    setInterval(() => {
+      audio.currentTime = 0;
+      audio.play().catch(e => {});
+    }, 15000);
   });
 </script>
 
-<!-- Use unpkg instead of jsdelivr to bypass network blocks -->
+<!-- 2. Back to jsDelivr CDN because it works on your device -->
 <script type="importmap">
 {
   "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
   }
 }
 </script>
@@ -71,7 +76,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 // 1. WORLD SETUP
 // ==========================================
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a2b1a);
+// Setting background color so it's not black if something fails
+scene.background = new THREE.Color(0x1a2b1a); 
 scene.fog = new THREE.FogExp2(0x1a2b1a, 0.02);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 600);
@@ -159,6 +165,7 @@ scene.add(tRexGroup);
 
 let jawBone = null; 
 let headBone = null; 
+const roarAudio = document.getElementById("roarSound"); // FIXED: Defined inside module
 
 const loader = new GLTFLoader();
 const loadingDiv = document.getElementById("loading");
@@ -170,7 +177,9 @@ function loadTRex() {
   
   loader.load(MODEL_URL, (gltf) => {
     tRexModel = gltf.scene;
-    tRexModel.scale.set(5.0, 5.0, 5.0); 
+    
+    // 3.0 is massive but shouldn't clip the camera
+    tRexModel.scale.set(3.0, 3.0, 3.0); 
     
     const box = new THREE.Box3().setFromObject(tRexModel);
     const center = box.getCenter(new THREE.Vector3());
@@ -179,7 +188,7 @@ function loadTRex() {
     tRexModel.position.z -= center.z;
     
     tRexGroup.add(tRexModel);
-    tRexGroup.position.set(0, getTerrainHeight(0, -30), -30);
+    tRexGroup.position.set(0, getTerrainHeight(0, -40), -40); // Moved further back
     
     tRexModel.traverse((child) => { 
       if (child.isMesh) { 
@@ -213,7 +222,7 @@ function loadTRex() {
     }
   }, 
   (xhr) => { if(xhr.total) loadingDiv.innerText = `Loading: ${Math.round((xhr.loaded / xhr.total) * 100)}%`; },
-  (error) => { loadingDiv.innerText = "T-Rex file not found. Check GitHub."; loadingDiv.style.color = "red"; }
+  (error) => { loadingDiv.innerText = "File not found!"; loadingDiv.style.color = "red"; }
 });
 loadTRex();
 
@@ -265,39 +274,42 @@ function animate() {
   const delta = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
 
-  if (tRexMixer) tRexMixer.update(delta);
-  
-  if (tRexModel) {
-    const speed = 0.1; 
-    const radius = 30;
-    const angle = t * speed;
-
-    const x = Math.cos(angle) * radius;
-    const z = -30 + Math.sin(angle) * radius;
-
-    const stepFrequency = 4;
-    const bobAmount = Math.abs(Math.sin(t * stepFrequency)) * 0.4; 
-    const swayAmount = Math.sin(t * (stepFrequency / 2)) * 0.08;
-
-    tRexGroup.position.set(x, getTerrainHeight(x, z) + bobAmount, z);
-    tRexGroup.rotation.z = swayAmount;
-
-    const nextAngle = angle + 0.1;
-    const nextX = Math.cos(nextAngle) * radius;
-    const nextZ = -30 + Math.sin(nextAngle) * radius;
+  try {
+    if (tRexMixer) tRexMixer.update(delta);
     
-    const targetRotation = Math.atan2(nextX - x, nextZ - z);
-    tRexGroup.rotation.y = targetRotation + Math.PI; 
+    if (tRexModel) {
+      const speed = 0.1; 
+      const radius = 35;
+      const angle = t * speed;
 
-    try {
+      const x = Math.cos(angle) * radius;
+      const z = -40 + Math.sin(angle) * radius;
+
+      const stepFrequency = 4;
+      const bobAmount = Math.abs(Math.sin(t * stepFrequency)) * 0.4; 
+      const swayAmount = Math.sin(t * (stepFrequency / 2)) * 0.08;
+
+      tRexGroup.position.set(x, getTerrainHeight(x, z) + bobAmount, z);
+      tRexGroup.rotation.z = swayAmount;
+
+      const nextAngle = angle + 0.1;
+      const nextX = Math.cos(nextAngle) * radius;
+      const nextZ = -40 + Math.sin(nextAngle) * radius;
+      
+      const targetRotation = Math.atan2(nextX - x, nextZ - z);
+      tRexGroup.rotation.y = targetRotation + Math.PI; 
+
       if (jawBone) {
-         const targetJawRot = (roarAudio.paused === false) ? 0.6 : Math.max(0, Math.sin(t * 2)) * 0.1;
+         const targetJawRot = (roarAudio && roarAudio.paused === false) ? 0.6 : Math.max(0, Math.sin(t * 2)) * 0.1;
          jawBone.rotation.x += (targetJawRot - jawBone.rotation.x) * 0.1;
       }
       if (headBone) {
          headBone.rotation.x = Math.sin(t * stepFrequency) * 0.05;
       }
-    } catch(e) {}
+    }
+  } catch (e) {
+    // Silently catch errors so the screen doesn't go black
+    console.log("Animation error:", e);
   }
 
   // Player Movement
