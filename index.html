@@ -3,26 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Jurassic Park - Cinematic</title>
+<title>Jurassic Park - Real T-Rex</title>
 <style>
 * { box-sizing: border-box; }
 body { margin: 0; overflow: hidden; background: #050a05; font-family: 'Segoe UI', sans-serif; color: white; touch-action: none; }
-canvas { 
-  display: block; 
-  /* Cinematic Film Filter */
-  filter: contrast(1.15) saturate(1.2) brightness(0.95);
-}
-#hud { position: fixed; top: 20px; left: 20px; z-index: 5; background: rgba(0,0,0,.7); padding: 15px 20px; border-radius: 8px; backdrop-filter: blur(10px); pointer-events: none; border-left: 4px solid #ff2200; }
+canvas { display: block; }
+#hud { position: fixed; top: 20px; left: 20px; z-index: 5; background: rgba(0,0,0,.7); padding: 15px 20px; border-radius: 8px; pointer-events: none; border-left: 4px solid #ff2200; }
 #hud h2 { margin: 0 0 5px; font-size: 22px; letter-spacing: 3px; color: #ffd7aa; font-weight: bold;}
 #hud p { margin: 0; color: #ff6666; font-size: 13px; letter-spacing: 2px; font-weight: bold;}
-#crosshair { position: fixed; top: 50%; left: 50%; width: 6px; height: 6px; background: rgba(255,255,255,0.7); border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); box-shadow: 0 0 8px rgba(0,0,0,0.9); }
-#joystick { position: fixed; bottom: 40px; left: 40px; width: 140px; height: 140px; border-radius: 50%; border: 2px solid rgba(255,255,255,.2); background: rgba(0,0,0,.5); z-index: 10; touch-action: none; backdrop-filter: blur(4px); }
-#stick { position: absolute; width: 60px; height: 60px; left: 40px; top: 40px; border-radius: 50%; background: rgba(200,220,200,.5); border: 2px solid rgba(255,255,255,.5); box-shadow: 0 0 10px rgba(0,0,0,0.8); }
+#crosshair { position: fixed; top: 50%; left: 50%; width: 6px; height: 6px; background: rgba(255,255,255,0.7); border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); }
+#joystick { position: fixed; bottom: 40px; left: 40px; width: 140px; height: 140px; border-radius: 50%; border: 2px solid rgba(255,255,255,.2); background: rgba(0,0,0,.5); z-index: 10; touch-action: none; }
+#stick { position: absolute; width: 60px; height: 60px; left: 40px; top: 40px; border-radius: 50%; background: rgba(200,220,200,.5); border: 2px solid rgba(255,255,255,.5); }
 #start { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; flex-direction: column; background: rgba(0,0,0,.95); }
-#start h1 { font-size: 36px; letter-spacing: 8px; margin-bottom: 10px; color: #ff4400; text-shadow: 0 0 20px rgba(255,68,0,0.5); }
+#start h1 { font-size: 36px; letter-spacing: 8px; margin-bottom: 10px; color: #ff4400; }
 #start p { color: #88aa88; margin-bottom: 40px; letter-spacing: 3px; }
-#start button { padding: 20px 50px; background: #2a3b2a; color: white; border: 2px solid #6b8a58; border-radius: 4px; font-size: 20px; cursor: pointer; letter-spacing: 4px; text-transform: uppercase; transition: 0.3s; font-weight: bold; }
-#start button:hover { background: #4a5d3e; box-shadow: 0 0 30px rgba(107, 138, 88, 0.8); }
+#start button { padding: 20px 50px; background: #2a3b2a; color: white; border: 2px solid #6b8a58; border-radius: 4px; font-size: 20px; cursor: pointer; letter-spacing: 4px; font-weight: bold; }
+#loading { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ffaa55; font-size: 18px; z-index: 15; display: none; }
 </style>
 </head>
 <body>
@@ -33,23 +29,18 @@ canvas {
 </div>
 <div id="crosshair"></div>
 <div id="joystick"><div id="stick"></div></div>
+<div id="loading">Downloading 3D Model...</div>
 <div id="start">
   <h1>JURASSIC PARK</h1>
   <p>PREHISTORIC WILDERNESS</p>
   <button id="startButton">ENTER THE JUNGLE</button>
 </div>
 
-<audio id="ambientSound" loop>
-  <source src="https://actions.google.com/sounds/v1/ambiences/jungle_forest.ogg" type="audio/ogg">
-</audio>
-<audio id="roarSound">
-  <source src="https://actions.google.com/sounds/v1/animals/trex_roar.ogg" type="audio/ogg">
-</audio>
-
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
   }
 }
 </script>
@@ -57,282 +48,141 @@ canvas {
 <script type="module">
 
 import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-// ==========================================
-// 1. WORLD SETUP & CINEMATIC ATMOSPHERE
-// ==========================================
+// --- WORLD SETUP ---
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x121a12); // Darker, moodier sky
-scene.fog = new THREE.FogExp2(0x121a12, 0.022); 
+scene.background = new THREE.Color(0x1a2b1a);
+scene.fog = new THREE.FogExp2(0x1a2b1a, 0.015);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 600);
-const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.1;
 document.body.appendChild(renderer.domElement);
 
-const ambient = new THREE.HemisphereLight(0x445577, 0x0a110a, 1.2);
+// --- LIGHTING ---
+const ambient = new THREE.HemisphereLight(0x5577aa, 0x112211, 1.5);
 scene.add(ambient);
-const sun = new THREE.DirectionalLight(0xff8844, 3.5);
+const sun = new THREE.DirectionalLight(0xffaa55, 3.0);
 sun.position.set(-50, 80, 30);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.camera.left = -100;
-sun.shadow.camera.right = 100;
-sun.shadow.camera.top = 100;
-sun.shadow.camera.bottom = -100;
+sun.shadow.camera.left = -100; sun.shadow.camera.right = 100;
+sun.shadow.camera.top = 100; sun.shadow.camera.bottom = -100;
 scene.add(sun);
 
-// ==========================================
-// 2. PROCEDURAL TEXTURES (Skin & Ground)
-// ==========================================
-function createDinoSkinTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 128; canvas.height = 128;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#3a4a2a'; // Base green
-  ctx.fillRect(0, 0, 128, 128);
-  for(let i=0; i<2000; i++) {
-    ctx.fillStyle = Math.random() > 0.5 ? '#2e3b20' : '#4a5e38';
-    ctx.beginPath();
-    ctx.arc(Math.random()*128, Math.random()*128, Math.random()*2+1, 0, Math.PI*2);
-    ctx.fill();
-  }
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
-  return tex;
-}
-
-function createGroundTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512; canvas.height = 512;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#1e2618';
-  ctx.fillRect(0, 0, 512, 512);
-  for(let i=0; i<8000; i++) {
-    ctx.fillStyle = Math.random() > 0.5 ? '#161c12' : '#2e3b24';
-    ctx.beginPath();
-    ctx.arc(Math.random()*512, Math.random()*512, Math.random()*4+1, 0, Math.PI*2);
-    ctx.fill();
-  }
-  return new THREE.CanvasTexture(canvas);
-}
-
-const groundTex = createGroundTexture();
-groundTex.wrapS = THREE.RepeatWrapping;
-groundTex.wrapT = THREE.RepeatWrapping;
-groundTex.repeat.set(30, 30);
-
-// ==========================================
-// 3. TERRAIN & VEGETATION
-// ==========================================
+// --- TERRAIN ---
 function getTerrainHeight(x, z) {
-  let y = Math.sin(x * 0.02) * Math.cos(z * 0.02) * 12;
-  y += Math.sin(x * 0.05) * Math.cos(z * 0.05) * 3;
-  return y;
+  return Math.sin(x * 0.02) * Math.cos(z * 0.02) * 12 + Math.sin(x * 0.05) * Math.cos(z * 0.05) * 3;
 }
-
 const groundGeo = new THREE.PlaneGeometry(600, 600, 128, 128);
 groundGeo.rotateX(-Math.PI / 2);
 const pos = groundGeo.attributes.position;
-for (let i = 0; i < pos.count; i++) {
-  pos.setY(i, getTerrainHeight(pos.getX(i), pos.getZ(i)));
-}
+for (let i = 0; i < pos.count; i++) pos.setY(i, getTerrainHeight(pos.getX(i), pos.getZ(i)));
 groundGeo.computeVertexNormals();
-
-const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ map: groundTex, roughness: 1 }));
+const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ color: 0x2a3324, roughness: 1 }));
 ground.receiveShadow = true;
 scene.add(ground);
 
+// --- TREES ---
 const trees = new THREE.Group();
 scene.add(trees);
-const barkMat = new THREE.MeshStandardMaterial({ color: 0x2e2214, roughness: 1 });
-const leafMat = new THREE.MeshStandardMaterial({ color: 0x0d1a0d, roughness: 0.9 });
+const barkMat = new THREE.MeshStandardMaterial({ color: 0x2e2214 });
+const leafMat = new THREE.MeshStandardMaterial({ color: 0x112211 });
 
 function makeTree(x, z) {
   const tree = new THREE.Group();
-  const h = 25 + Math.random() * 15;
+  const h = 20 + Math.random() * 15;
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 3, h, 7), barkMat);
-  trunk.position.y = h / 2; trunk.castShadow = true; trunk.receiveShadow = true;
+  trunk.position.y = h / 2; trunk.castShadow = true;
   tree.add(trunk);
-
-  for (let i = 0; i < 10; i++) {
-    // Flattened spheres to look more like broad leaves
-    const leaf = new THREE.Mesh(new THREE.SphereGeometry(6 + Math.random() * 4, 5, 4), leafMat);
-    leaf.scale.set(1, 0.3, 1); 
-    leaf.position.set((Math.random()-0.5)*12, h + (Math.random()-0.5)*8, (Math.random()-0.5)*12);
-    leaf.castShadow = true; leaf.receiveShadow = true;
+  for (let i = 0; i < 8; i++) {
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(6 + Math.random() * 3, 5, 4), leafMat);
+    leaf.scale.set(1, 0.4, 1);
+    leaf.position.set((Math.random()-0.5)*10, h + (Math.random()-0.5)*6, (Math.random()-0.5)*10);
+    leaf.castShadow = true;
     tree.add(leaf);
   }
   tree.position.set(x, getTerrainHeight(x, z), z);
   trees.add(tree);
 }
-
-for (let i = 0; i < 80; i++) {
+for (let i = 0; i < 60; i++) {
   const x = (Math.random() - 0.5) * 300;
   const z = (Math.random() - 0.5) * 300;
-  if (Math.abs(x) < 30 && Math.abs(z) < 30) continue; 
-  makeTree(x, z);
+  if (Math.abs(x) > 25 || Math.abs(z) > 25) makeTree(x, z);
 }
 
-// ==========================================
-// 4. ORGANIC DINOSAUR MODELS
-// ==========================================
-const dinosaurs = [];
-const skinTex = createDinoSkinTexture();
-const skinMat = new THREE.MeshStandardMaterial({ map: skinTex, roughness: 0.8 });
-const bellyMat = new THREE.MeshStandardMaterial({ color: 0x8a8a66, roughness: 0.9 });
-const clawMat = new THREE.MeshStandardMaterial({ color: 0xddddcc, roughness: 0.5 });
-const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.1 });
+// --- REAL 3D T-REX MODEL ---
+let tRexMixer = null;
+let tRexModel = null;
+const loader = new GLTFLoader();
+const loadingDiv = document.getElementById("loading");
 
-function createTRex(x, z, scale = 1) {
-  const dino = new THREE.Group();
-  
-  // Organic Body (Capsules instead of spheres)
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(1.8, 3, 8, 16), skinMat);
-  body.rotation.z = Math.PI / 2;
-  body.rotation.y = Math.PI / 2;
-  body.position.y = 4.5; body.castShadow = true;
-  dino.add(body);
+// This is a free, high-quality, rigged T-Rex model
+const MODEL_URL = 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/T-Rex.glb';
 
-  // Belly
-  const belly = new THREE.Mesh(new THREE.CapsuleGeometry(1.4, 2.8, 8, 16), bellyMat);
-  belly.rotation.z = Math.PI / 2;
-  belly.rotation.y = Math.PI / 2;
-  belly.position.set(0, 3.8, 0.2); belly.castShadow = true;
-  dino.add(belly);
-
-  // Neck
-  const neck = new THREE.Mesh(new THREE.CapsuleGeometry(0.9, 2, 8, 16), skinMat);
-  neck.position.set(0, 6.2, -1.8); neck.rotation.x = -0.6; neck.castShadow = true;
-  dino.add(neck);
-
-  // Head shape (Snout)
-  const head = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 3.0), skinMat);
-  head.position.set(0, 7.8, -3.8); head.castShadow = true;
-  // Round the corners of the box
-  head.geometry.translate(0, 0, 0); 
-  dino.add(head);
-
-  // Jaw
-  const jaw = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 2.8), skinMat);
-  jaw.position.set(0, 7.0, -3.9); jaw.castShadow = true;
-  dino.add(jaw);
-
-  // Eyes
-  for(let side of [-1, 1]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), eyeMat);
-    eye.position.set(side * 0.6, 8.1, -4.8);
-    dino.add(eye);
-  }
-
-  // Teeth
-  for(let i=0; i<8; i++) {
-    const tooth = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.5, 4), clawMat);
-    tooth.position.set(-0.6 + (i*0.17), 7.3, -5.2);
-    tooth.rotation.x = Math.PI; // Point down
-    dino.add(tooth);
-  }
-
-  // Tail (Tapered using multiple capsules)
-  const tail1 = new THREE.Mesh(new THREE.CapsuleGeometry(1.2, 2, 8, 16), skinMat);
-  tail1.rotation.x = Math.PI / 2;
-  tail1.position.set(0, 4.5, 3.5); tail1.castShadow = true;
-  dino.add(tail1);
-
-  const tail2 = new THREE.Mesh(new THREE.CapsuleGeometry(0.8, 3, 8, 16), skinMat);
-  tail2.rotation.x = Math.PI / 2;
-  tail2.position.set(0, 4.5, 5.5); tail2.castShadow = true;
-  dino.add(tail2);
-
-  const tail3 = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 2, 8, 16), skinMat);
-  tail3.rotation.x = Math.PI / 2;
-  tail3.position.set(0, 4.5, 7.0); tail3.castShadow = true;
-  dino.add(tail3);
-
-  // Legs (Muscular)
-  const legs = [];
-  for (const side of [-1, 1]) {
-    const leg = new THREE.Group();
+function loadTRex() {
+  loadingDiv.style.display = "block";
+  loader.load(MODEL_URL, (gltf) => {
+    tRexModel = gltf.scene;
+    tRexModel.scale.set(0.5, 0.5, 0.5);
+    tRexModel.position.set(0, getTerrainHeight(0, -30), -30);
     
-    // Thigh
-    const thigh = new THREE.Mesh(new THREE.CapsuleGeometry(0.8, 2, 8, 12), skinMat);
-    thigh.position.y = 2.0; thigh.castShadow = true;
-    leg.add(thigh);
+    tRexModel.traverse((child) => { 
+      if (child.isMesh) { 
+        child.castShadow = true; 
+        child.receiveShadow = true; 
+      } 
+    });
     
-    // Calf
-    const calf = new THREE.Mesh(new THREE.CapsuleGeometry(0.5, 2, 8, 12), skinMat);
-    calf.position.set(0, -0.5, 0.6); calf.rotation.x = -0.4; calf.castShadow = true;
-    leg.add(calf);
-    
-    // Foot
-    const foot = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 2.2), skinMat);
-    foot.position.set(0, -2.0, 1.2);
-    leg.add(foot);
+    scene.add(tRexModel);
+    loadingDiv.style.display = "none";
 
-    // Claws
-    for(let c=-1; c<=1; c++) {
-      const claw = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.6, 4), clawMat);
-      claw.rotation.x = Math.PI/2;
-      claw.position.set(c * 0.4, -2.0, 2.3);
-      leg.add(claw);
+    // Play its built-in walking animation
+    tRexMixer = new THREE.AnimationMixer(tRexModel);
+    if (gltf.animations.length > 0) {
+      const action = tRexMixer.clipAction(gltf.animations[0]);
+      action.play();
     }
-
-    leg.position.set(side * 1.8, 3.0, 0);
-    dino.add(leg);
-    legs.push(leg);
-  }
-
-  dino.position.set(x, getTerrainHeight(x, z), z);
-  dino.scale.set(scale, scale, scale);
-  
-  // IMPORTANT: Build a data object for animation and facing
-  dino.userData = { 
-    legs, tail: tail2, jaw, head, speed: 0.25, radius: 45, angle: Math.random() * Math.PI * 2, time: 0 
-  };
-  scene.add(dino);
-  dinosaurs.push(dino);
+  }, 
+  (xhr) => {
+    loadingDiv.innerText = `Loading T-Rex: ${Math.round((xhr.loaded / xhr.total) * 100)}%`;
+  },
+  (error) => {
+    console.error("Model failed to load", error);
+    loadingDiv.innerText = "Error loading model. Check internet.";
+  });
 }
+loadTRex();
 
-// Spawn T-Rexes
-createTRex(0, -30, 1.3); // Massive one right in front
-createTRex(40, -40, 0.8);
-createTRex(-50, 30, 0.9);
-
-// ==========================================
-// 5. CONTROLS
-// ==========================================
-let yaw = 0, pitch = 0;
+// --- CONTROLS ---
+let yaw = 0, pitch = 0, joyX = 0, joyY = 0;
 const keys = {};
 window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
 window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
-let joyX = 0, joyY = 0;
 const joystick = document.getElementById("joystick");
 const stick = document.getElementById("stick");
 let joyActive = false;
-
-joystick.addEventListener("pointerdown", e => { joyActive = true; joystick.setPointerCapture(e.pointerId); updateJoystick(e); });
-joystick.addEventListener("pointermove", e => { if (joyActive) updateJoystick(e); });
-function updateJoystick(e) {
+joystick.addEventListener("pointerdown", e => { joyActive = true; joystick.setPointerCapture(e.pointerId); updateJoy(e); });
+joystick.addEventListener("pointermove", e => { if (joyActive) updateJoy(e); });
+function updateJoy(e) {
   const rect = joystick.getBoundingClientRect();
   let dx = e.clientX - rect.left - rect.width / 2;
   let dy = e.clientY - rect.top - rect.height / 2;
-  const max = 40;
-  const length = Math.hypot(dx, dy);
-  if (length > max) { dx = dx / length * max; dy = dy / length * max; }
+  const max = 40, len = Math.hypot(dx, dy);
+  if (len > max) { dx = dx / len * max; dy = dy / len * max; }
   joyX = dx / max; joyY = dy / max;
   stick.style.transform = `translate(${dx}px, ${dy}px)`;
 }
-function releaseJoystick() { joyActive = false; joyX = 0; joyY = 0; stick.style.transform = "translate(0px, 0px)"; }
-joystick.addEventListener("pointerup", releaseJoystick);
-joystick.addEventListener("pointercancel", releaseJoystick);
+function releaseJoy() { joyActive = false; joyX = 0; joyY = 0; stick.style.transform = "translate(0px, 0px)"; }
+joystick.addEventListener("pointerup", releaseJoy);
+joystick.addEventListener("pointercancel", releaseJoy);
 
 let lookActive = false, lastX = 0, lastY = 0;
 renderer.domElement.addEventListener("pointerdown", e => { lookActive = true; lastX = e.clientX; lastY = e.clientY; renderer.domElement.setPointerCapture(e.pointerId); });
@@ -346,41 +196,56 @@ renderer.domElement.addEventListener("pointermove", e => {
 renderer.domElement.addEventListener("pointerup", () => lookActive = false);
 renderer.domElement.addEventListener("pointercancel", () => lookActive = false);
 
-// ==========================================
-// 6. AUDIO & START
-// ==========================================
-const ambientAudio = document.getElementById("ambientSound");
-const roarAudio = document.getElementById("roarSound");
+// --- AUDIO (Procedural Roar via Web Audio API) ---
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
 
+function playSynthRoar() {
+  if (!audioCtx) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(90, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 2.0);
+
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(600, audioCtx.currentTime);
+  filter.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 2.0);
+
+  gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.3);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 2.5);
+
+  osc.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + 2.5);
+}
+
+// --- START BUTTON ---
 document.getElementById("startButton").onclick = () => {
   document.getElementById("start").style.display = "none";
   if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
   
-  ambientAudio.volume = 0.6;
-  ambientAudio.play().catch(e => console.log("Audio blocked:", e));
-  
-  setTimeout(() => {
-    roarAudio.volume = 1.0;
-    roarAudio.play().catch(e => console.log("Audio blocked:", e));
-  }, 1000);
+  audioCtx = new AudioContext();
+  setTimeout(playSynthRoar, 500);
+  setInterval(playSynthRoar, 10000);
 };
 
-setInterval(() => {
-  if(ambientAudio.paused) return;
-  roarAudio.currentTime = 0;
-  roarAudio.volume = 0.8 + Math.random() * 0.2;
-  roarAudio.play().catch(e => {});
-}, 18000);
-
-// ==========================================
-// 7. ANIMATION LOOP
-// ==========================================
+// --- ANIMATION LOOP ---
 const clock = new THREE.Clock();
 
 function animate() {
   requestAnimationFrame(animate);
   const delta = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
+
+  if (tRexMixer) tRexMixer.update(delta);
+  if (tRexModel) {
+    tRexModel.position.y = getTerrainHeight(tRexModel.position.x, tRexModel.position.z);
+  }
 
   // Player Movement
   let forward = 0, sideways = 0;
@@ -399,52 +264,11 @@ function animate() {
 
   camera.position.addScaledVector(direction, movement.z * speed * delta);
   camera.position.addScaledVector(right, movement.x * speed * delta);
-
-  const terrainY = getTerrainHeight(camera.position.x, camera.position.z);
-  camera.position.y = terrainY + 1.7;
-  if (movement.length() > 0) camera.position.y += Math.sin(t * 15) * 0.08; // Head bob
+  camera.position.y = getTerrainHeight(camera.position.x, camera.position.z) + 1.7;
 
   camera.rotation.order = "YXZ";
   camera.rotation.y = yaw;
   camera.rotation.x = pitch;
-
-  // Animate Dinosaurs
-  dinosaurs.forEach((dino) => {
-    const data = dino.userData;
-    data.time += delta;
-    
-    // Update roaming position
-    data.angle += delta * data.speed * 0.2;
-    const dinoX = Math.cos(data.angle) * data.radius;
-    const dinoZ = Math.sin(data.angle) * data.radius;
-    
-    dino.position.set(dinoX, getTerrainHeight(dinoX, dinoZ), dinoZ);
-    
-    // FIX: Calculate direction and use lookAt so it faces FORWARD
-    const nextX = Math.cos(data.angle + 0.1) * data.radius;
-    const nextZ = Math.sin(data.angle + 0.1) * data.radius;
-    
-    // Since the model is built facing -Z, we look at the next point, then rotate 180
-    dino.lookAt(nextX, dino.position.y, nextZ);
-    dino.rotateY(Math.PI); // Flip 180 degrees so it faces forward
-
-    // Walking Animation (Legs move opposite)
-    const walkSpeed = 4.5 * data.speed;
-    if (data.legs) {
-      data.legs[0].rotation.x = Math.sin(data.time * walkSpeed) * 0.6;
-      if (data.legs[1]) data.legs[1].rotation.x = Math.cos(data.time * walkSpeed) * 0.6;
-    }
-    
-    // Tail sway
-    if (data.tail) {
-      data.tail.rotation.y = Math.sin(data.time * 2) * 0.2;
-    }
-    
-    // Jaw chomp
-    if (data.jaw) {
-      data.jaw.rotation.x = Math.max(0, Math.sin(data.time * 3)) * 0.5;
-    }
-  });
 
   renderer.render(scene, camera);
 }
@@ -456,7 +280,6 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
 </script>
 </body>
 </html>
