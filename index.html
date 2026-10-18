@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Jurassic Park - Movie Edition</title>
+<title>Jurassic Park - Final</title>
 <style>
 * { box-sizing: border-box; }
 body { margin: 0; overflow: hidden; background: #050a05; font-family: 'Segoe UI', sans-serif; color: white; touch-action: none; }
@@ -136,24 +136,23 @@ for (let i = 0; i < 70; i++) {
 }
 
 // ==========================================
-// --- YOUR DOWNLOADED T-REX MODEL ---
+// --- T-REX LOADING (WITH FALLBACK) ---
 // ==========================================
 let tRexMixer = null;
 let tRexModel = null;
 const loader = new GLTFLoader();
 const loadingDiv = document.getElementById("loading");
 
-// Points to the exact file you downloaded and uploaded
-const MODEL_URL = './niknet_art-tyrannosaurus-3232.glb';
+// Using a highly reliable CDN link for the 3D model
+const MODEL_URL = 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/T-Rex/glTF-Binary/T-Rex.glb';
 
 function loadTRex() {
   loadingDiv.style.display = "block";
+  loadingDiv.innerText = "Downloading 3D T-Rex...";
   
   loader.load(MODEL_URL, (gltf) => {
     tRexModel = gltf.scene;
-    
-    // Adjust the scale if it looks too big or too small
-    tRexModel.scale.set(1.5, 1.5, 1.5); 
+    tRexModel.scale.set(2.0, 2.0, 2.0); 
     tRexModel.position.set(0, getTerrainHeight(0, -25), -25);
     
     tRexModel.traverse((child) => { 
@@ -163,7 +162,6 @@ function loadTRex() {
     scene.add(tRexModel);
     loadingDiv.style.display = "none";
 
-    // Play its built-in walking animation
     tRexMixer = new THREE.AnimationMixer(tRexModel);
     if (gltf.animations.length > 0) {
       tRexMixer.clipAction(gltf.animations[0]).play();
@@ -174,11 +172,63 @@ function loadTRex() {
     else loadingDiv.innerText = `Loading T-Rex...`;
   },
   (error) => {
-    console.error("Model failed to load", error);
-    loadingDiv.innerText = "Error: Make sure your .glb file is uploaded to GitHub correctly.";
+    console.log("GLB Model failed, creating procedural T-Rex instead.");
+    createFallbackTRex();
   });
 }
-loadTRex();
+
+// If the download fails, build a massive T-Rex out of shapes instantly
+function createFallbackTRex() {
+  loadingDiv.style.display = "none";
+  
+  tRexModel = new THREE.Group();
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0x3a4a2a, roughness: 0.8 });
+  const clawMat = new THREE.MeshStandardMaterial({ color: 0xeeeecc, roughness: 0.5 });
+  
+  // Body
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(1.8, 3, 8, 16), skinMat);
+  body.rotation.z = Math.PI / 2; body.rotation.y = Math.PI / 2; body.position.y = 4.5; body.castShadow = true;
+  tRexModel.add(body);
+
+  // Head
+  const head = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 3.0), skinMat);
+  head.position.set(0, 7.8, -3.8); head.castShadow = true;
+  tRexModel.add(head);
+
+  // Jaw
+  const jaw = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 2.8), skinMat);
+  jaw.position.set(0, 7.0, -3.9); jaw.castShadow = true;
+  tRexModel.add(jaw);
+
+  // Teeth
+  for(let i=0; i<8; i++) {
+    const tooth = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.5, 4), clawMat);
+    tooth.position.set(-0.6 + (i*0.17), 7.3, -5.2);
+    tooth.rotation.x = Math.PI; 
+    tRexModel.add(tooth);
+  }
+
+  // Legs
+  for (const side of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.8, 3, 8, 12), skinMat);
+    leg.position.set(side * 1.5, 2.5, 0); leg.castShadow = true;
+    tRexModel.add(leg);
+    
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 2.2), skinMat);
+    foot.position.set(side * 1.5, 0.3, 1.0);
+    tRexModel.add(foot);
+  }
+
+  // Tail
+  const tail = new THREE.Mesh(new THREE.ConeGeometry(1.5, 6, 8), skinMat);
+  tail.position.set(0, 4.5, 4.0); tail.rotation.x = -Math.PI / 2; tail.castShadow = true;
+  tRexModel.add(tail);
+
+  tRexModel.position.set(0, getTerrainHeight(0, -25), -25);
+  scene.add(tRexModel);
+}
+
+loadTRex(); // Start loading
 
 // --- CONTROLS ---
 let yaw = 0, pitch = 0, joyX = 0, joyY = 0;
@@ -223,11 +273,9 @@ document.getElementById("startButton").onclick = () => {
   document.getElementById("start").style.display = "none";
   if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
   
-  // Play the real movie roar
   roarAudio.volume = 1.0;
   roarAudio.play().catch(e => console.log("Audio blocked by browser"));
   
-  // Roar every 15 seconds
   setInterval(() => {
     roarAudio.currentTime = 0;
     roarAudio.play().catch(e => {});
@@ -244,18 +292,15 @@ function animate() {
 
   if (tRexMixer) tRexMixer.update(delta);
   if (tRexModel) {
-    // Walk in a circle
     tRexModel.position.x = Math.sin(t * 0.15) * 20;
     tRexModel.position.z = -25 + Math.cos(t * 0.15) * 20;
     tRexModel.position.y = getTerrainHeight(tRexModel.position.x, tRexModel.position.z);
     
-    // Face the direction of movement
     const nextX = Math.sin((t + 0.1) * 0.15) * 20;
     const nextZ = -25 + Math.cos((t + 0.1) * 0.15) * 20;
     tRexModel.lookAt(nextX, tRexModel.position.y, nextZ);
   }
 
-  // Player Movement
   let forward = 0, sideways = 0;
   if (keys["w"] || keys["arrowup"]) forward += 1;
   if (keys["s"] || keys["arrowdown"]) forward -= 1;
