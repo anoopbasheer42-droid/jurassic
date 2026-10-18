@@ -3,37 +3,48 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Jurassic Explorer 3D - Realistic</title>
+<title>Jurassic Park - Cinematic</title>
 <style>
 * { box-sizing: border-box; }
-body { margin: 0; overflow: hidden; background: #0a0f0a; font-family: 'Segoe UI', sans-serif; color: white; touch-action: none; }
-canvas { display: block; }
-#hud { position: fixed; top: 20px; left: 20px; z-index: 5; background: rgba(0,0,0,.6); padding: 15px 20px; border-radius: 8px; backdrop-filter: blur(10px); pointer-events: none; border-left: 4px solid #ff4400; }
-#hud h2 { margin: 0 0 5px; font-size: 20px; letter-spacing: 3px; color: #ffd7aa; font-weight: bold;}
-#hud p { margin: 0; color: #88aa88; font-size: 13px; letter-spacing: 1px; }
-#crosshair { position: fixed; top: 50%; left: 50%; width: 8px; height: 8px; background: rgba(255,255,255,0.6); border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); box-shadow: 0 0 5px rgba(0,0,0,0.8); }
-#joystick { position: fixed; bottom: 40px; left: 40px; width: 140px; height: 140px; border-radius: 50%; border: 2px solid rgba(255,255,255,.15); background: rgba(0,0,0,.4); z-index: 10; touch-action: none; backdrop-filter: blur(2px); }
-#stick { position: absolute; width: 60px; height: 60px; left: 40px; top: 40px; border-radius: 50%; background: rgba(160,200,150,.4); border: 2px solid rgba(255,255,255,.4); box-shadow: 0 0 10px rgba(0,0,0,0.5); }
-#start { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; flex-direction: column; background: rgba(5,10,5,.95); backdrop-filter: blur(10px); }
-#start h1 { font-size: 32px; letter-spacing: 5px; margin-bottom: 10px; color: #ffaa55;}
-#start p { color: #88aa88; margin-bottom: 30px; letter-spacing: 2px;}
-#start button { padding: 20px 40px; background: #3d4f33; color: white; border: 1px solid #6b8a58; border-radius: 4px; font-size: 18px; cursor: pointer; letter-spacing: 3px; text-transform: uppercase; transition: 0.3s; box-shadow: 0 0 20px rgba(107, 138, 88, 0.2); }
-#start button:hover { background: #5e754f; box-shadow: 0 0 30px rgba(107, 138, 88, 0.6); }
+body { margin: 0; overflow: hidden; background: #050a05; font-family: 'Segoe UI', sans-serif; color: white; touch-action: none; }
+canvas { 
+  display: block; 
+  /* Cinematic Film Filter */
+  filter: contrast(1.15) saturate(1.2) brightness(0.95);
+}
+#hud { position: fixed; top: 20px; left: 20px; z-index: 5; background: rgba(0,0,0,.7); padding: 15px 20px; border-radius: 8px; backdrop-filter: blur(10px); pointer-events: none; border-left: 4px solid #ff2200; }
+#hud h2 { margin: 0 0 5px; font-size: 22px; letter-spacing: 3px; color: #ffd7aa; font-weight: bold;}
+#hud p { margin: 0; color: #ff6666; font-size: 13px; letter-spacing: 2px; font-weight: bold;}
+#crosshair { position: fixed; top: 50%; left: 50%; width: 6px; height: 6px; background: rgba(255,255,255,0.7); border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); box-shadow: 0 0 8px rgba(0,0,0,0.9); }
+#joystick { position: fixed; bottom: 40px; left: 40px; width: 140px; height: 140px; border-radius: 50%; border: 2px solid rgba(255,255,255,.2); background: rgba(0,0,0,.5); z-index: 10; touch-action: none; backdrop-filter: blur(4px); }
+#stick { position: absolute; width: 60px; height: 60px; left: 40px; top: 40px; border-radius: 50%; background: rgba(200,220,200,.5); border: 2px solid rgba(255,255,255,.5); box-shadow: 0 0 10px rgba(0,0,0,0.8); }
+#start { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; flex-direction: column; background: rgba(0,0,0,.95); }
+#start h1 { font-size: 36px; letter-spacing: 8px; margin-bottom: 10px; color: #ff4400; text-shadow: 0 0 20px rgba(255,68,0,0.5); }
+#start p { color: #88aa88; margin-bottom: 40px; letter-spacing: 3px; }
+#start button { padding: 20px 50px; background: #2a3b2a; color: white; border: 2px solid #6b8a58; border-radius: 4px; font-size: 20px; cursor: pointer; letter-spacing: 4px; text-transform: uppercase; transition: 0.3s; font-weight: bold; }
+#start button:hover { background: #4a5d3e; box-shadow: 0 0 30px rgba(107, 138, 88, 0.8); }
 </style>
 </head>
 <body>
 
 <div id="hud">
   <h2>ISLA SORNA</h2>
-  <p>RESTRICTED AREA</p>
+  <p>DANGER: T-REX ACTIVE</p>
 </div>
 <div id="crosshair"></div>
 <div id="joystick"><div id="stick"></div></div>
 <div id="start">
   <h1>JURASSIC PARK</h1>
-  <p>THE REX IS HUNTING</p>
+  <p>PREHISTORIC WILDERNESS</p>
   <button id="startButton">ENTER THE JUNGLE</button>
 </div>
+
+<audio id="ambientSound" loop>
+  <source src="https://actions.google.com/sounds/v1/ambiences/jungle_forest.ogg" type="audio/ogg">
+</audio>
+<audio id="roarSound">
+  <source src="https://actions.google.com/sounds/v1/animals/trex_roar.ogg" type="audio/ogg">
+</audio>
 
 <script type="importmap">
 {
@@ -48,13 +59,13 @@ canvas { display: block; }
 import * as THREE from "three";
 
 // ==========================================
-// 1. WORLD SETUP & ATMOSPHERE
+// 1. WORLD SETUP & CINEMATIC ATMOSPHERE
 // ==========================================
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a2b1a);
-scene.fog = new THREE.FogExp2(0x1a2b1a, 0.015);
+scene.background = new THREE.Color(0x121a12); // Darker, moodier sky
+scene.fog = new THREE.FogExp2(0x121a12, 0.022); 
 
-const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 600);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 600);
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -62,25 +73,67 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.0;
+renderer.toneMappingExposure = 1.1;
 document.body.appendChild(renderer.domElement);
 
-// Lighting - Cinematic Sunset
-const ambient = new THREE.HemisphereLight(0x4466aa, 0x112211, 1.0);
+const ambient = new THREE.HemisphereLight(0x445577, 0x0a110a, 1.2);
 scene.add(ambient);
-const sun = new THREE.DirectionalLight(0xffaa66, 3.0);
-sun.position.set(-40, 60, 20);
+const sun = new THREE.DirectionalLight(0xff8844, 3.5);
+sun.position.set(-50, 80, 30);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.camera.left = -60;
-sun.shadow.camera.right = 60;
-sun.shadow.camera.top = 60;
-sun.shadow.camera.bottom = -60;
+sun.shadow.camera.left = -100;
+sun.shadow.camera.right = 100;
+sun.shadow.camera.top = 100;
+sun.shadow.camera.bottom = -100;
 scene.add(sun);
 
-// Terrain
+// ==========================================
+// 2. PROCEDURAL TEXTURES (Skin & Ground)
+// ==========================================
+function createDinoSkinTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128; canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#3a4a2a'; // Base green
+  ctx.fillRect(0, 0, 128, 128);
+  for(let i=0; i<2000; i++) {
+    ctx.fillStyle = Math.random() > 0.5 ? '#2e3b20' : '#4a5e38';
+    ctx.beginPath();
+    ctx.arc(Math.random()*128, Math.random()*128, Math.random()*2+1, 0, Math.PI*2);
+    ctx.fill();
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+function createGroundTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512; canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#1e2618';
+  ctx.fillRect(0, 0, 512, 512);
+  for(let i=0; i<8000; i++) {
+    ctx.fillStyle = Math.random() > 0.5 ? '#161c12' : '#2e3b24';
+    ctx.beginPath();
+    ctx.arc(Math.random()*512, Math.random()*512, Math.random()*4+1, 0, Math.PI*2);
+    ctx.fill();
+  }
+  return new THREE.CanvasTexture(canvas);
+}
+
+const groundTex = createGroundTexture();
+groundTex.wrapS = THREE.RepeatWrapping;
+groundTex.wrapT = THREE.RepeatWrapping;
+groundTex.repeat.set(30, 30);
+
+// ==========================================
+// 3. TERRAIN & VEGETATION
+// ==========================================
 function getTerrainHeight(x, z) {
-  let y = Math.sin(x * 0.02) * Math.cos(z * 0.02) * 10;
+  let y = Math.sin(x * 0.02) * Math.cos(z * 0.02) * 12;
   y += Math.sin(x * 0.05) * Math.cos(z * 0.05) * 3;
   return y;
 }
@@ -89,199 +142,171 @@ const groundGeo = new THREE.PlaneGeometry(600, 600, 128, 128);
 groundGeo.rotateX(-Math.PI / 2);
 const pos = groundGeo.attributes.position;
 for (let i = 0; i < pos.count; i++) {
-  const x = pos.getX(i), z = pos.getZ(i);
-  pos.setY(i, getTerrainHeight(x, z));
+  pos.setY(i, getTerrainHeight(pos.getX(i), pos.getZ(i)));
 }
 groundGeo.computeVertexNormals();
 
-// Rich, dark soil color
-const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x2a3324, roughness: 1 });
-const ground = new THREE.Mesh(groundGeo, groundMaterial);
+const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ map: groundTex, roughness: 1 }));
 ground.receiveShadow = true;
 scene.add(ground);
 
-// Giant Jungle Trees
 const trees = new THREE.Group();
 scene.add(trees);
 const barkMat = new THREE.MeshStandardMaterial({ color: 0x2e2214, roughness: 1 });
-const leafMats = [
-  new THREE.MeshStandardMaterial({ color: 0x112211, roughness: 0.9 }),
-  new THREE.MeshStandardMaterial({ color: 0x1a331a, roughness: 0.9 }),
-  new THREE.MeshStandardMaterial({ color: 0x0d1a0d, roughness: 0.9 })
-];
+const leafMat = new THREE.MeshStandardMaterial({ color: 0x0d1a0d, roughness: 0.9 });
 
-function makeTree(x, z, scale = 1) {
+function makeTree(x, z) {
   const tree = new THREE.Group();
-  const trunkHeight = 15 + Math.random() * 15;
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1 * scale, 2.5 * scale, trunkHeight, 7), barkMat);
-  trunk.position.y = trunkHeight / 2;
-  trunk.castShadow = true; trunk.receiveShadow = true;
+  const h = 25 + Math.random() * 15;
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 3, h, 7), barkMat);
+  trunk.position.y = h / 2; trunk.castShadow = true; trunk.receiveShadow = true;
   tree.add(trunk);
 
-  for (let i = 0; i < 12; i++) {
-    const leaf = new THREE.Mesh(
-      new THREE.DodecahedronGeometry((4 + Math.random() * 3) * scale, 1),
-      leafMats[Math.floor(Math.random() * leafMats.length)]
-    );
-    leaf.position.set((Math.random() - 0.5) * 8 * scale, trunkHeight + (Math.random() - 0.5) * 6 * scale, (Math.random() - 0.5) * 8 * scale);
+  for (let i = 0; i < 10; i++) {
+    // Flattened spheres to look more like broad leaves
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(6 + Math.random() * 4, 5, 4), leafMat);
+    leaf.scale.set(1, 0.3, 1); 
+    leaf.position.set((Math.random()-0.5)*12, h + (Math.random()-0.5)*8, (Math.random()-0.5)*12);
     leaf.castShadow = true; leaf.receiveShadow = true;
     tree.add(leaf);
-  }
-  for(let i=0; i<5; i++) {
-    const vine = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 10+Math.random()*10, 4), leafMats[0]);
-    vine.position.set((Math.random()-0.5)*5, trunkHeight - 5, (Math.random()-0.5)*5);
-    vine.castShadow = true;
-    tree.add(vine);
   }
   tree.position.set(x, getTerrainHeight(x, z), z);
   trees.add(tree);
 }
 
-for (let i = 0; i < 120; i++) {
-  const x = (Math.random() - 0.5) * 280;
-  const z = (Math.random() - 0.5) * 280;
-  if (Math.abs(x) < 15 && Math.abs(z) < 15) continue;
-  makeTree(x, z, 0.8 + Math.random() * 1.5);
+for (let i = 0; i < 80; i++) {
+  const x = (Math.random() - 0.5) * 300;
+  const z = (Math.random() - 0.5) * 300;
+  if (Math.abs(x) < 30 && Math.abs(z) < 30) continue; 
+  makeTree(x, z);
 }
 
-// Floating Mist Particles
-const particleGeo = new THREE.BufferGeometry();
-const particleCount = 1000;
-const particlePos = new Float32Array(particleCount * 3);
-for(let i=0; i<particleCount*3; i++) { particlePos[i] = (Math.random() - 0.5) * 200; }
-particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
-const particles = new THREE.Points(particleGeo, new THREE.PointsMaterial({ color: 0xaaccaa, size: 0.3, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending }));
-scene.add(particles);
-
 // ==========================================
-// 2. PROCEDURAL DINOSAURS (High Detail)
+// 4. ORGANIC DINOSAUR MODELS
 // ==========================================
 const dinosaurs = [];
-const dinoMat = new THREE.MeshStandardMaterial({ color: 0x3a4a2a, roughness: 0.8 });
-const bellyMat = new THREE.MeshStandardMaterial({ color: 0x6a6a4a, roughness: 1 });
-const clawMat = new THREE.MeshStandardMaterial({ color: 0xddddcc, roughness: 0.6 });
+const skinTex = createDinoSkinTexture();
+const skinMat = new THREE.MeshStandardMaterial({ map: skinTex, roughness: 0.8 });
+const bellyMat = new THREE.MeshStandardMaterial({ color: 0x8a8a66, roughness: 0.9 });
+const clawMat = new THREE.MeshStandardMaterial({ color: 0xddddcc, roughness: 0.5 });
+const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.1 });
 
-function createTRex(x, z) {
+function createTRex(x, z, scale = 1) {
   const dino = new THREE.Group();
   
-  // Body
-  const body = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 12), dinoMat);
-  body.scale.set(2.0, 1.2, 1.5); body.position.y = 3.5; body.castShadow = true;
+  // Organic Body (Capsules instead of spheres)
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(1.8, 3, 8, 16), skinMat);
+  body.rotation.z = Math.PI / 2;
+  body.rotation.y = Math.PI / 2;
+  body.position.y = 4.5; body.castShadow = true;
   dino.add(body);
 
-  // Head & Jaw
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.9, 2.5, 10), dinoMat);
-  neck.position.set(0, 5.0, -1.5); neck.rotation.x = -0.5; neck.castShadow = true;
+  // Belly
+  const belly = new THREE.Mesh(new THREE.CapsuleGeometry(1.4, 2.8, 8, 16), bellyMat);
+  belly.rotation.z = Math.PI / 2;
+  belly.rotation.y = Math.PI / 2;
+  belly.position.set(0, 3.8, 0.2); belly.castShadow = true;
+  dino.add(belly);
+
+  // Neck
+  const neck = new THREE.Mesh(new THREE.CapsuleGeometry(0.9, 2, 8, 16), skinMat);
+  neck.position.set(0, 6.2, -1.8); neck.rotation.x = -0.6; neck.castShadow = true;
   dino.add(neck);
 
-  const head = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.2, 2.5), dinoMat);
-  head.position.set(0, 6.0, -3.0); head.castShadow = true;
+  // Head shape (Snout)
+  const head = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 3.0), skinMat);
+  head.position.set(0, 7.8, -3.8); head.castShadow = true;
+  // Round the corners of the box
+  head.geometry.translate(0, 0, 0); 
   dino.add(head);
 
-  const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 2.0), dinoMat);
-  jaw.position.set(0, 5.5, -3.2); jaw.castShadow = true;
+  // Jaw
+  const jaw = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 2.8), skinMat);
+  jaw.position.set(0, 7.0, -3.9); jaw.castShadow = true;
   dino.add(jaw);
 
-  // Tail
-  const tail = new THREE.Mesh(new THREE.ConeGeometry(1.0, 6, 8), dinoMat);
-  tail.position.set(0, 3.5, 3.5); tail.rotation.x = Math.PI / 2; tail.castShadow = true;
-  dino.add(tail);
+  // Eyes
+  for(let side of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), eyeMat);
+    eye.position.set(side * 0.6, 8.1, -4.8);
+    dino.add(eye);
+  }
 
-  // Legs
+  // Teeth
+  for(let i=0; i<8; i++) {
+    const tooth = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.5, 4), clawMat);
+    tooth.position.set(-0.6 + (i*0.17), 7.3, -5.2);
+    tooth.rotation.x = Math.PI; // Point down
+    dino.add(tooth);
+  }
+
+  // Tail (Tapered using multiple capsules)
+  const tail1 = new THREE.Mesh(new THREE.CapsuleGeometry(1.2, 2, 8, 16), skinMat);
+  tail1.rotation.x = Math.PI / 2;
+  tail1.position.set(0, 4.5, 3.5); tail1.castShadow = true;
+  dino.add(tail1);
+
+  const tail2 = new THREE.Mesh(new THREE.CapsuleGeometry(0.8, 3, 8, 16), skinMat);
+  tail2.rotation.x = Math.PI / 2;
+  tail2.position.set(0, 4.5, 5.5); tail2.castShadow = true;
+  dino.add(tail2);
+
+  const tail3 = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 2, 8, 16), skinMat);
+  tail3.rotation.x = Math.PI / 2;
+  tail3.position.set(0, 4.5, 7.0); tail3.castShadow = true;
+  dino.add(tail3);
+
+  // Legs (Muscular)
   const legs = [];
   for (const side of [-1, 1]) {
     const leg = new THREE.Group();
-    const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.4, 2.5, 8), dinoMat);
-    thigh.position.y = 1.5; thigh.castShadow = true;
+    
+    // Thigh
+    const thigh = new THREE.Mesh(new THREE.CapsuleGeometry(0.8, 2, 8, 12), skinMat);
+    thigh.position.y = 2.0; thigh.castShadow = true;
     leg.add(thigh);
-    const calf = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 2.0, 8), dinoMat);
-    calf.position.set(0, -0.5, 0.3); calf.rotation.x = -0.3; calf.castShadow = true;
+    
+    // Calf
+    const calf = new THREE.Mesh(new THREE.CapsuleGeometry(0.5, 2, 8, 12), skinMat);
+    calf.position.set(0, -0.5, 0.6); calf.rotation.x = -0.4; calf.castShadow = true;
     leg.add(calf);
-    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 1.5), clawMat);
-    foot.position.set(0, -1.5, 0.8);
+    
+    // Foot
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 2.2), skinMat);
+    foot.position.set(0, -2.0, 1.2);
     leg.add(foot);
-    leg.position.set(side * 1.2, 2.5, 0);
+
+    // Claws
+    for(let c=-1; c<=1; c++) {
+      const claw = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.6, 4), clawMat);
+      claw.rotation.x = Math.PI/2;
+      claw.position.set(c * 0.4, -2.0, 2.3);
+      leg.add(claw);
+    }
+
+    leg.position.set(side * 1.8, 3.0, 0);
     dino.add(leg);
     legs.push(leg);
   }
 
   dino.position.set(x, getTerrainHeight(x, z), z);
-  dino.userData = { legs, tail, jaw, head, speed: 0.5, radius: 30, angle: Math.random() * Math.PI * 2, time: 0 };
+  dino.scale.set(scale, scale, scale);
+  
+  // IMPORTANT: Build a data object for animation and facing
+  dino.userData = { 
+    legs, tail: tail2, jaw, head, speed: 0.25, radius: 45, angle: Math.random() * Math.PI * 2, time: 0 
+  };
   scene.add(dino);
   dinosaurs.push(dino);
 }
 
-function createRaptor(x, z) {
-  const dino = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 10), dinoMat);
-  body.scale.set(1.5, 0.8, 0.8); body.position.y = 1.5; body.castShadow = true;
-  dino.add(body);
-
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 1.2), dinoMat);
-  head.position.set(0, 2.0, -1.0); head.castShadow = true;
-  dino.add(head);
-
-  const tail = new THREE.Mesh(new THREE.ConeGeometry(0.4, 2.5, 6), dinoMat);
-  tail.position.set(0, 1.5, 1.5); tail.rotation.x = Math.PI / 2; tail.castShadow = true;
-  dino.add(tail);
-
-  const legs = [];
-  for (const side of [-1, 1]) {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.15, 1.2, 6), dinoMat);
-    leg.position.set(side * 0.5, 0.6, 0); leg.castShadow = true;
-    dino.add(leg);
-    legs.push(leg);
-  }
-
-  dino.position.set(x, getTerrainHeight(x, z), z);
-  dino.userData = { legs, tail, speed: 1.2, radius: 15, angle: Math.random() * Math.PI * 2, time: 0 };
-  scene.add(dino);
-  dinosaurs.push(dino);
-}
-
-// Spawn 1 T-Rex and 3 Raptors
-createTRex(0, -20);
-createRaptor(15, -15);
-createRaptor(-10, -25);
-createRaptor(20, 10);
+// Spawn T-Rexes
+createTRex(0, -30, 1.3); // Massive one right in front
+createTRex(40, -40, 0.8);
+createTRex(-50, 30, 0.9);
 
 // ==========================================
-// 3. AUDIO (Procedural Roar via Web Audio API)
-// ==========================================
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-let audioCtx;
-let roarInterval;
-
-function playRoar() {
-  if (!audioCtx) return;
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  const filter = audioCtx.createBiquadFilter();
-
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(80, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 1.5);
-
-  filter.type = 'lowpass';
-  filter.frequency.setValueAtTime(800, audioCtx.currentTime);
-  filter.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 1.5);
-
-  gain.gain.setValueAtTime(0, audioCtx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.2);
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 2.0);
-
-  osc.connect(filter);
-  filter.connect(gain);
-  gain.connect(audioCtx.destination);
-
-  osc.start();
-  osc.stop(audioCtx.currentTime + 2.0);
-}
-
-// ==========================================
-// 4. CONTROLS
+// 5. CONTROLS
 // ==========================================
 let yaw = 0, pitch = 0;
 const keys = {};
@@ -295,7 +320,6 @@ let joyActive = false;
 
 joystick.addEventListener("pointerdown", e => { joyActive = true; joystick.setPointerCapture(e.pointerId); updateJoystick(e); });
 joystick.addEventListener("pointermove", e => { if (joyActive) updateJoystick(e); });
-
 function updateJoystick(e) {
   const rect = joystick.getBoundingClientRect();
   let dx = e.clientX - rect.left - rect.width / 2;
@@ -323,26 +347,33 @@ renderer.domElement.addEventListener("pointerup", () => lookActive = false);
 renderer.domElement.addEventListener("pointercancel", () => lookActive = false);
 
 // ==========================================
-// 5. START EXPERIENCE
+// 6. AUDIO & START
 // ==========================================
+const ambientAudio = document.getElementById("ambientSound");
+const roarAudio = document.getElementById("roarSound");
+
 document.getElementById("startButton").onclick = () => {
   document.getElementById("start").style.display = "none";
   if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
   
-  // Initialize Audio Context on user gesture
-  audioCtx = new AudioContext();
+  ambientAudio.volume = 0.6;
+  ambientAudio.play().catch(e => console.log("Audio blocked:", e));
   
-  // First roar after 2 seconds
-  setTimeout(playRoar, 2000);
-  
-  // Random roars every 15-25 seconds
-  roarInterval = setInterval(() => {
-    if (Math.random() > 0.5) playRoar();
-  }, 20000);
+  setTimeout(() => {
+    roarAudio.volume = 1.0;
+    roarAudio.play().catch(e => console.log("Audio blocked:", e));
+  }, 1000);
 };
 
+setInterval(() => {
+  if(ambientAudio.paused) return;
+  roarAudio.currentTime = 0;
+  roarAudio.volume = 0.8 + Math.random() * 0.2;
+  roarAudio.play().catch(e => {});
+}, 18000);
+
 // ==========================================
-// 6. ANIMATION LOOP
+// 7. ANIMATION LOOP
 // ==========================================
 const clock = new THREE.Clock();
 
@@ -351,7 +382,7 @@ function animate() {
   const delta = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
 
-  // Movement
+  // Player Movement
   let forward = 0, sideways = 0;
   if (keys["w"] || keys["arrowup"]) forward += 1;
   if (keys["s"] || keys["arrowdown"]) forward -= 1;
@@ -364,14 +395,14 @@ function animate() {
 
   const direction = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
   const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-  const speed = 8;
+  const speed = 9;
 
   camera.position.addScaledVector(direction, movement.z * speed * delta);
   camera.position.addScaledVector(right, movement.x * speed * delta);
 
   const terrainY = getTerrainHeight(camera.position.x, camera.position.z);
   camera.position.y = terrainY + 1.7;
-  if (movement.length() > 0) camera.position.y += Math.sin(t * 15) * 0.06;
+  if (movement.length() > 0) camera.position.y += Math.sin(t * 15) * 0.08; // Head bob
 
   camera.rotation.order = "YXZ";
   camera.rotation.y = yaw;
@@ -382,39 +413,39 @@ function animate() {
     const data = dino.userData;
     data.time += delta;
     
-    // Roaming Logic
+    // Update roaming position
     data.angle += delta * data.speed * 0.2;
     const dinoX = Math.cos(data.angle) * data.radius;
     const dinoZ = Math.sin(data.angle) * data.radius;
     
     dino.position.set(dinoX, getTerrainHeight(dinoX, dinoZ), dinoZ);
     
-    // Face direction of travel
+    // FIX: Calculate direction and use lookAt so it faces FORWARD
     const nextX = Math.cos(data.angle + 0.1) * data.radius;
     const nextZ = Math.sin(data.angle + 0.1) * data.radius;
-    dino.rotation.y = Math.atan2(nextX - dinoX, nextZ - dinoZ);
+    
+    // Since the model is built facing -Z, we look at the next point, then rotate 180
+    dino.lookAt(nextX, dino.position.y, nextZ);
+    dino.rotateY(Math.PI); // Flip 180 degrees so it faces forward
 
-    // Walking Animation
+    // Walking Animation (Legs move opposite)
+    const walkSpeed = 4.5 * data.speed;
     if (data.legs) {
-      const walkSpeed = 5 * data.speed;
       data.legs[0].rotation.x = Math.sin(data.time * walkSpeed) * 0.6;
       if (data.legs[1]) data.legs[1].rotation.x = Math.cos(data.time * walkSpeed) * 0.6;
     }
     
-    // Tail Sway
+    // Tail sway
     if (data.tail) {
       data.tail.rotation.y = Math.sin(data.time * 2) * 0.2;
-      data.tail.rotation.z = Math.cos(data.time * 1.5) * 0.1;
     }
     
-    // Head Bob & Jaw Chomp
+    // Jaw chomp
     if (data.jaw) {
-      data.jaw.rotation.x = Math.max(0, Math.sin(data.time * 3)) * 0.4;
-      data.head.position.y = 6.0 + Math.sin(data.time * 5) * 0.1;
+      data.jaw.rotation.x = Math.max(0, Math.sin(data.time * 3)) * 0.5;
     }
   });
 
-  particles.rotation.y = t * 0.01;
   renderer.render(scene, camera);
 }
 
