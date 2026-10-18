@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Jurassic Park - Unstoppable T-Rex</title>
+<title>Jurassic Park - Unstoppable</title>
 <style>
 * { box-sizing: border-box; }
 body { margin: 0; overflow: hidden; background: #050a05; font-family: 'Segoe UI', sans-serif; color: white; touch-action: none; }
@@ -52,8 +52,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 // --- WORLD SETUP ---
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x2a3b2a);
-scene.fog = new THREE.FogExp2(0x2a3b2a, 0.015);
+scene.background = new THREE.Color(0x1a2b1a);
+scene.fog = new THREE.FogExp2(0x1a2b1a, 0.025);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 600);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -66,7 +66,7 @@ renderer.toneMappingExposure = 1.2;
 document.body.appendChild(renderer.domElement);
 
 // --- LIGHTING ---
-const ambient = new THREE.HemisphereLight(0x88aacc, 0x223311, 2.0); 
+const ambient = new THREE.HemisphereLight(0x88aacc, 0x223311, 1.5); 
 scene.add(ambient);
 const sun = new THREE.DirectionalLight(0xffcc88, 3.0);
 sun.position.set(-50, 80, 30);
@@ -85,71 +85,85 @@ groundGeo.rotateX(-Math.PI / 2);
 const pos = groundGeo.attributes.position;
 for (let i = 0; i < pos.count; i++) pos.setY(i, getTerrainHeight(pos.getX(i), pos.getZ(i)));
 groundGeo.computeVertexNormals();
-const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ color: 0x2a3324, roughness: 1 }));
+const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ color: 0x1f2a18, roughness: 1 }));
 ground.receiveShadow = true;
 scene.add(ground);
 
-// --- TREES ---
-const trees = new THREE.Group();
-scene.add(trees);
-const barkMat = new THREE.MeshStandardMaterial({ color: 0x2e2214 });
-const leafMat = new THREE.MeshStandardMaterial({ color: 0x142b14 });
+// --- REALISTIC TREES ---
+function createBarkTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#3b2b1a'; ctx.fillRect(0, 0, 256, 256);
+  for(let i=0; i<1500; i++) {
+    ctx.fillStyle = Math.random() > 0.5 ? '#1f140b' : '#4a3622';
+    ctx.fillRect(Math.random()*256, Math.random()*256, Math.random()*5+1, Math.random()*20+5);
+  }
+  return new THREE.CanvasTexture(canvas);
+}
+const barkTex = createBarkTexture();
+barkTex.wrapS = THREE.RepeatWrapping; barkTex.wrapT = THREE.RepeatWrapping; barkTex.repeat.set(2, 4);
+const barkMat = new THREE.MeshStandardMaterial({ map: barkTex, roughness: 1 });
+const leafMats = [
+  new THREE.MeshStandardMaterial({ color: 0x0a1f0a, roughness: 0.9, flatShading: true }),
+  new THREE.MeshStandardMaterial({ color: 0x143614, roughness: 0.9, flatShading: true }),
+  new THREE.MeshStandardMaterial({ color: 0x1f4a1f, roughness: 0.9, flatShading: true })
+];
 
-function makeTree(x, z) {
+function makeRealisticTree(x, z) {
   const tree = new THREE.Group();
-  const h = 20 + Math.random() * 15;
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 3, h, 7), barkMat);
-  trunk.position.y = h / 2; trunk.castShadow = true;
+  const h = 25 + Math.random() * 20;
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 3.5, h, 8), barkMat);
+  trunk.position.y = h / 2; trunk.castShadow = true; trunk.receiveShadow = true;
   tree.add(trunk);
-  for (let i = 0; i < 8; i++) {
-    const leaf = new THREE.Mesh(new THREE.SphereGeometry(6 + Math.random() * 3, 5, 4), leafMat);
-    leaf.scale.set(1, 0.4, 1);
-    leaf.position.set((Math.random()-0.5)*10, h + (Math.random()-0.5)*6, (Math.random()-0.5)*10);
-    leaf.castShadow = true;
+  for (let i = 0; i < 15; i++) {
+    const leaf = new THREE.Mesh(new THREE.DodecahedronGeometry(4 + Math.random() * 4, 0), leafMats[Math.floor(Math.random() * leafMats.length)]);
+    leaf.position.set((Math.random() - 0.5) * 12, h + (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 12);
+    leaf.rotation.set(Math.random(), Math.random(), Math.random());
+    leaf.castShadow = true; leaf.receiveShadow = true;
     tree.add(leaf);
   }
   tree.position.set(x, getTerrainHeight(x, z), z);
-  trees.add(tree);
-}
-for (let i = 0; i < 80; i++) {
-  const x = (Math.random() - 0.5) * 300;
-  const z = (Math.random() - 0.5) * 300;
-  if (Math.abs(x) > 20 || Math.abs(z) > 20) makeTree(x, z);
+  scene.add(tree);
 }
 
-// --- REAL 3D T-REX MODEL (JSDELIVR CDN) ---
+for (let i = 0; i < 70; i++) {
+  const x = (Math.random() - 0.5) * 300;
+  const z = (Math.random() - 0.5) * 300;
+  if (Math.abs(x) > 25 || Math.abs(z) > 25) makeRealisticTree(x, z);
+}
+
+// ==========================================
+// --- T-REX LOADING & FALLBACK ---
+// ==========================================
 let tRexMixer = null;
 let tRexModel = null;
+let isFallback = false;
 const loader = new GLTFLoader();
 const loadingDiv = document.getElementById("loading");
 
-// Using jsDelivr CDN for 100% mobile compatibility
-const MODEL_URL = 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/T-Rex/glTF-Binary/T-Rex.glb';
+// The most reliable link on the internet for Three.js models
+const MODEL_URL = 'https://threejs.org/examples/models/gltf/T-Rex.glb';
 
 function loadTRex() {
   loadingDiv.style.display = "block";
+  loadingDiv.innerText = "Downloading 3D T-Rex...";
+  
   loader.load(MODEL_URL, (gltf) => {
     tRexModel = gltf.scene;
-    
-    // Scale to make it massive
     tRexModel.scale.set(2.0, 2.0, 2.0); 
     tRexModel.position.set(0, getTerrainHeight(0, -25), -25);
     
     tRexModel.traverse((child) => { 
-      if (child.isMesh) { 
-        child.castShadow = true; 
-        child.receiveShadow = true; 
-      } 
+      if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } 
     });
     
     scene.add(tRexModel);
     loadingDiv.style.display = "none";
 
-    // Play its built-in walking animation
     tRexMixer = new THREE.AnimationMixer(tRexModel);
     if (gltf.animations.length > 0) {
-      const action = tRexMixer.clipAction(gltf.animations[0]);
-      action.play();
+      tRexMixer.clipAction(gltf.animations[0]).play();
     }
   }, 
   (xhr) => {
@@ -157,11 +171,47 @@ function loadTRex() {
     else loadingDiv.innerText = `Loading T-Rex...`;
   },
   (error) => {
-    console.error("Model failed to load", error);
-    loadingDiv.innerText = "Model failed. Please refresh.";
+    console.log("GLB Model failed, creating procedural T-Rex instead.");
+    createFallbackTRex();
   });
 }
-loadTRex();
+
+// If the download fails, build a massive T-Rex out of shapes instantly
+function createFallbackTRex() {
+  isFallback = true;
+  loadingDiv.style.display = "none";
+  
+  tRexModel = new THREE.Group();
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0x3a4a2a, roughness: 0.8 });
+  const clawMat = new THREE.MeshStandardMaterial({ color: 0xeeeecc, roughness: 0.5 });
+  
+  // Body
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(1.8, 3, 8, 16), skinMat);
+  body.rotation.z = Math.PI / 2; body.rotation.y = Math.PI / 2; body.position.y = 4.5; body.castShadow = true;
+  tRexModel.add(body);
+
+  // Head
+  const head = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 3.0), skinMat);
+  head.position.set(0, 7.8, -3.8); head.castShadow = true;
+  tRexModel.add(head);
+
+  // Legs
+  for (const side of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.8, 3, 8, 12), skinMat);
+    leg.position.set(side * 1.5, 2.5, 0); leg.castShadow = true;
+    tRexModel.add(leg);
+  }
+
+  // Tail
+  const tail = new THREE.Mesh(new THREE.ConeGeometry(1.5, 6, 8), skinMat);
+  tail.position.set(0, 4.5, 4.0); tail.rotation.x = -Math.PI / 2; tail.castShadow = true;
+  tRexModel.add(tail);
+
+  tRexModel.position.set(0, getTerrainHeight(0, -25), -25);
+  scene.add(tRexModel);
+}
+
+loadTRex(); // Start loading
 
 // --- CONTROLS ---
 let yaw = 0, pitch = 0, joyX = 0, joyY = 0;
@@ -199,7 +249,7 @@ renderer.domElement.addEventListener("pointermove", e => {
 renderer.domElement.addEventListener("pointerup", () => lookActive = false);
 renderer.domElement.addEventListener("pointercancel", () => lookActive = false);
 
-// --- AUDIO (Guaranteed Roar) ---
+// --- AUDIO ---
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
 
