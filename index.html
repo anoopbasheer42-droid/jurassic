@@ -1,88 +1,377 @@
-dfsdfsect.width / 2;
-  const centerY = rect.height / 2;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Jurassic Explorer 3D</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #0f1710;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: white;
+  touch-action: none;
+}
+canvas { display: block; }
+#hud {
+  position: fixed; top: 16px; left: 16px; z-index: 5;
+  background: rgba(0,0,0,.6); padding: 12px 16px; border-radius: 12px;
+  backdrop-filter: blur(8px); pointer-events: none;
+  border-left: 4px solid #ffaa55;
+}
+#hud h2 { margin: 0 0 5px; font-size: 18px; letter-spacing: 2px; }
+#hud p { margin: 0; color: #a4b89e; font-size: 12px; }
+#crosshair {
+  position: fixed; top: 50%; left: 50%; width: 6px; height: 6px;
+  background: rgba(255,255,255,0.8); border-radius: 50%;
+  pointer-events: none; transform: translate(-50%, -50%);
+}
+#joystick {
+  position: fixed; bottom: 30px; left: 30px; width: 130px; height: 130px;
+  border-radius: 50%; border: 2px solid rgba(255,255,255,.2);
+  background: rgba(0,0,0,.4); z-index: 10; touch-action: none;
+}
+#stick {
+  position: absolute; width: 55px; height: 55px; left: 37.5px; top: 37.5px;
+  border-radius: 50%; background: rgba(160,200,150,.5);
+  border: 2px solid rgba(255,255,255,.5);
+}
+#start {
+  position: fixed; inset: 0; z-index: 20; display: flex;
+  align-items: center; justify-content: center;
+  background: rgba(5,12,6,.9); backdrop-filter: blur(10px);
+}
+#start button {
+  padding: 20px 40px; background: #4a5d3e; color: white;
+  border: 1px solid #8ba878; border-radius: 8px; font-size: 20px;
+  cursor: pointer; letter-spacing: 2px; text-transform: uppercase;
+  box-shadow: 0 0 20px rgba(139,168,120,0.3); transition: 0.3s;
+}
+#start button:hover { background: #5e754f; }
+</style>
+</head>
+<body>
 
-  let dx = e.clientX - rect.left - centerX;
-  let dy = e.clientY - rect.top - centerY;
+<div id="hud">
+  <h2>JURASSIC SECTOR</h2>
+  <p>DANGER: WILDLIFE ACTIVE</p>
+</div>
 
-  const max = 38;
+<div id="crosshair"></div>
 
-  const length = Math.hypot(dx, dy);
+<div id="joystick">
+  <div id="stick"></div>
+</div>
 
-  if (length > max) {
-    dx = dx / length * max;
-    dy = dy / length * max;
+<div id="start">
+  <button id="startButton">ENTER THE JUNGLE</button>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+
+<script type="module">
+
+import * as THREE from "three";
+
+// ----------------------------------
+// WORLD SETUP
+// ----------------------------------
+
+const scene = new THREE.Scene();
+// Dark, misty cinematic sunset
+scene.background = new THREE.Color(0x3a4a3a);
+scene.fog = new THREE.FogExp2(0x3a4a3a, 0.015);
+
+const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 600);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+document.body.appendChild(renderer.domElement);
+
+// ----------------------------------
+// LIGHTING
+// ----------------------------------
+
+const ambient = new THREE.HemisphereLight(0x8899aa, 0x223311, 1.5);
+scene.add(ambient);
+
+const sun = new THREE.DirectionalLight(0xffaa55, 3.0);
+sun.position.set(-40, 50, 20);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -60;
+sun.shadow.camera.right = 60;
+sun.shadow.camera.top = 60;
+sun.shadow.camera.bottom = -60;
+sun.shadow.bias = -0.001;
+scene.add(sun);
+
+// ----------------------------------
+// TERRAIN GENERATION (Rolling Hills)
+// ----------------------------------
+
+function getTerrainHeight(x, z) {
+  // Procedural noise for hills
+  let y = Math.sin(x * 0.03) * Math.cos(z * 0.03) * 8;
+  y += Math.sin(x * 0.08) * Math.cos(z * 0.08) * 2;
+  return y;
+}
+
+const groundGeo = new THREE.PlaneGeometry(600, 600, 100, 100);
+groundGeo.rotateX(-Math.PI / 2);
+const pos = groundGeo.attributes.position;
+
+for (let i = 0; i < pos.count; i++) {
+  const x = pos.getX(i);
+  const z = pos.getZ(i);
+  pos.setY(i, getTerrainHeight(x, z));
+}
+groundGeo.computeVertexNormals();
+
+const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x2e3b24, roughness: 1 });
+const ground = new THREE.Mesh(groundGeo, groundMaterial);
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Distant Volcano
+const volcanoGeo = new THREE.ConeGeometry(60, 40, 8);
+const volcanoMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 1 });
+const volcano = new THREE.Mesh(volcanoGeo, volcanoMat);
+volcano.position.set(150, 0, -200);
+scene.add(volcano);
+
+// Lava glow
+const lavaLight = new THREE.PointLight(0xff4400, 5, 100);
+lavaLight.position.set(150, 40, -200);
+scene.add(lavaLight);
+
+// ----------------------------------
+// VEGETATION
+// ----------------------------------
+
+const trees = new THREE.Group();
+scene.add(trees);
+
+const barkMat = new THREE.MeshStandardMaterial({ color: 0x3a2e1e, roughness: 1 });
+const leafMats = [
+  new THREE.MeshStandardMaterial({ color: 0x1c3619, roughness: 0.9 }),
+  new THREE.MeshStandardMaterial({ color: 0x2f4a24, roughness: 0.9 }),
+  new THREE.MeshStandardMaterial({ color: 0x142b12, roughness: 0.9 })
+];
+
+function makeTree(x, z, scale = 1) {
+  const tree = new THREE.Group();
+  const trunkHeight = 10 + Math.random() * 8;
+  
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.5 * scale, 1.2 * scale, trunkHeight, 8), barkMat);
+  trunk.position.y = trunkHeight / 2;
+  trunk.castShadow = true;
+  tree.add(trunk);
+
+  // Massive Canopy
+  for (let i = 0; i < 8; i++) {
+    const leaf = new THREE.Mesh(
+      new THREE.IcosahedronGeometry((3.5 + Math.random() * 2.5) * scale, 1),
+      leafMats[Math.floor(Math.random() * leafMats.length)]
+    );
+    leaf.position.set(
+      (Math.random() - 0.5) * 6 * scale,
+      trunkHeight + (Math.random() - 0.5) * 4 * scale,
+      (Math.random() - 0.5) * 6 * scale
+    );
+    leaf.castShadow = true;
+    tree.add(leaf);
   }
 
-  joyX = dx / max;
-  joyY = dy / max;
+  // Hanging Vines
+  for(let i=0; i<4; i++) {
+    const vine = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 5+Math.random()*5, 4), leafMats[0]);
+    vine.position.set((Math.random()-0.5)*4, trunkHeight - 2, (Math.random()-0.5)*4);
+    tree.add(vine);
+  }
 
-  stick.style.transform =
-    `translate(${dx}px, ${dy}px)`;
+  tree.position.set(x, getTerrainHeight(x, z), z);
+  trees.add(tree);
+}
+
+// Scatter trees
+for (let i = 0; i < 150; i++) {
+  const x = (Math.random() - 0.5) * 250;
+  const z = (Math.random() - 0.5) * 250;
+  if (Math.abs(x) < 12 && Math.abs(z) < 12) continue; // Keep spawn clear
+  makeTree(x, z, 0.8 + Math.random() * 1.5);
+}
+
+// ----------------------------------
+// DINOSAUR MODELS
+// ----------------------------------
+
+const dinosaurs = [];
+const dinoMat = new THREE.MeshStandardMaterial({ color: 0x4a5a38, roughness: 0.8 });
+const bellyMat = new THREE.MeshStandardMaterial({ color: 0x8b8b60, roughness: 1 });
+const clawMat = new THREE.MeshStandardMaterial({ color: 0xddddcc, roughness: 0.6 });
+
+function createDinosaur(startX, startZ, speed, radius) {
+  const dino = new THREE.Group();
+  
+  // Body
+  const body = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), dinoMat);
+  body.scale.set(2.0, 1.2, 1.2);
+  body.position.y = 3.5;
+  body.castShadow = true;
+  dino.add(body);
+
+  // Belly
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 8), bellyMat);
+  belly.scale.set(1.8, 0.8, 1.0);
+  belly.position.set(0, 3.0, 0);
+  dino.add(belly);
+
+  // Head & Neck
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.8, 2.5, 10), dinoMat);
+  neck.position.set(0, 4.8, -1.8);
+  neck.rotation.x = -0.6;
+  neck.castShadow = true;
+  dino.add(neck);
+
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.9, 1.8), dinoMat);
+  head.position.set(0, 5.8, -3.2);
+  head.castShadow = true;
+  dino.add(head);
+
+  // Jaw
+  const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 1.4), dinoMat);
+  jaw.position.set(0, 5.4, -3.4);
+  jaw.castShadow = true;
+  dino.add(jaw);
+
+  // Tail
+  const tail = new THREE.Mesh(new THREE.ConeGeometry(0.8, 5, 8), dinoMat);
+  tail.position.set(0, 3.5, 3.0);
+  tail.rotation.x = Math.PI / 2;
+  tail.castShadow = true;
+  dino.add(tail);
+
+  // Legs (animated later)
+  const legs = [];
+  for (const side of [-1, 1]) {
+    const leg = new THREE.Group();
+    
+    const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.4, 2.5, 8), dinoMat);
+    thigh.position.y = 1.8;
+    thigh.castShadow = true;
+    leg.add(thigh);
+
+    const calf = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 2.0, 8), dinoMat);
+    calf.position.y = 0.2;
+    calf.position.z = 0.3;
+    calf.rotation.x = -0.3;
+    calf.castShadow = true;
+    leg.add(calf);
+
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 1.0), clawMat);
+    foot.position.set(0, -0.7, 0.6);
+    leg.add(foot);
+
+    leg.position.set(side * 1.0, 2.5, 0);
+    dino.add(leg);
+    legs.push(leg);
+  }
+
+  dino.userData = {
+    legs: legs,
+    tail: tail,
+    jaw: jaw,
+    speed: speed,
+    radius: radius,
+    time: Math.random() * 100,
+    angle: Math.random() * Math.PI * 2,
+    centerX: startX,
+    centerZ: startZ
+  };
+
+  scene.add(dino);
+  dinosaurs.push(dino);
+}
+
+// Spawn 3 dinos
+createDinosaur(20, -30, 0.8, 25);
+createDinosaur(-30, -50, 1.2, 35);
+createDinosaur(50, 20, 0.6, 20);
+
+// ----------------------------------
+// CONTROLS & INPUT
+// ----------------------------------
+
+let yaw = 0, pitch = 0;
+const keys = {};
+window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+// Joystick
+let joyX = 0, joyY = 0;
+const joystick = document.getElementById("joystick");
+const stick = document.getElementById("stick");
+let joyActive = false;
+
+joystick.addEventListener("pointerdown", e => {
+  joyActive = true; joystick.setPointerCapture(e.pointerId); updateJoystick(e);
+});
+joystick.addEventListener("pointermove", e => { if (joyActive) updateJoystick(e); });
+
+function updateJoystick(e) {
+  const rect = joystick.getBoundingClientRect();
+  let dx = e.clientX - rect.left - rect.width / 2;
+  let dy = e.clientY - rect.top - rect.height / 2;
+  const max = 38;
+  const length = Math.hypot(dx, dy);
+  if (length > max) { dx = dx / length * max; dy = dy / length * max; }
+  joyX = dx / max; joyY = dy / max;
+  stick.style.transform = `translate(${dx}px, ${dy}px)`;
 }
 
 function releaseJoystick() {
-  joyActive = false;
-  joyX = 0;
-  joyY = 0;
+  joyActive = false; joyX = 0; joyY = 0;
   stick.style.transform = "translate(0px, 0px)";
 }
-
 joystick.addEventListener("pointerup", releaseJoystick);
 joystick.addEventListener("pointercancel", releaseJoystick);
 
-// Drag to look around
-let lookActive = false;
-let lastX = 0;
-let lastY = 0;
-
+// Look (Drag Screen)
+let lookActive = false, lastX = 0, lastY = 0;
 renderer.domElement.addEventListener("pointerdown", e => {
-
-  lookActive = true;
-  lastX = e.clientX;
-  lastY = e.clientY;
-
+  lookActive = true; lastX = e.clientX; lastY = e.clientY;
   renderer.domElement.setPointerCapture(e.pointerId);
 });
-
 renderer.domElement.addEventListener("pointermove", e => {
-
   if (!lookActive) return;
-
-  const dx = e.clientX - lastX;
-  const dy = e.clientY - lastY;
-
-  lastX = e.clientX;
-  lastY = e.clientY;
-
-  yaw -= dx * 0.004;
-  pitch -= dy * 0.004;
-
-  pitch = Math.max(
-    -1.2,
-    Math.min(1.2, pitch)
-  );
+  yaw -= (e.clientX - lastX) * 0.004;
+  pitch -= (e.clientY - lastY) * 0.004;
+  pitch = Math.max(-1.2, Math.min(1.2, pitch));
+  lastX = e.clientX; lastY = e.clientY;
 });
+renderer.domElement.addEventListener("pointerup", () => lookActive = false);
+renderer.domElement.addEventListener("pointercancel", () => lookActive = false);
 
-renderer.domElement.addEventListener("pointerup", () => {
-  lookActive = false;
-});
-
-renderer.domElement.addEventListener("pointercancel", () => {
-  lookActive = false;
-});
-
-// ----------------------------------
-// START EXPERIENCE
-// ----------------------------------
-
+// Start Button
 document.getElementById("startButton").onclick = () => {
-
   document.getElementById("start").style.display = "none";
-
-  // Attempt fullscreen on supported devices.
   if (document.documentElement.requestFullscreen) {
-    document.documentElement.requestFullscreen()
-      .catch(() => {});
+    document.documentElement.requestFullscreen().catch(() => {});
   }
 };
 
@@ -93,81 +382,79 @@ document.getElementById("startButton").onclick = () => {
 const clock = new THREE.Clock();
 
 function animate() {
-
   requestAnimationFrame(animate);
-
   const delta = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
 
-  // Movement direction
-  let forward = 0;
-  let sideways = 0;
-
+  // Movement input
+  let forward = 0, sideways = 0;
   if (keys["w"] || keys["arrowup"]) forward += 1;
   if (keys["s"] || keys["arrowdown"]) forward -= 1;
-
   if (keys["a"] || keys["arrowleft"]) sideways -= 1;
   if (keys["d"] || keys["arrowright"]) sideways += 1;
+  forward -= joyY; sideways += joyX;
 
-  forward -= joyY;
-  sideways += joyX;
+  const movement = new THREE.Vector3(sideways, 0, -forward);
+  if (movement.length() > 1) movement.normalize();
 
-  const movement = new THREE.Vector3(
-    sideways,
-    0,
-    -forward
-  );
+  const direction = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+  const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+  const speed = 9;
 
-  if (movement.length() > 1) {
-    movement.normalize();
+  // Apply movement
+  camera.position.addScaledVector(direction, movement.z * speed * delta);
+  camera.position.addScaledVector(right, movement.x * speed * delta);
+
+  // Make player walk on terrain
+  const terrainY = getTerrainHeight(camera.position.x, camera.position.z);
+  camera.position.y = terrainY + 1.7;
+
+  // Camera bob (footsteps)
+  if (movement.length() > 0) {
+    camera.position.y += Math.sin(t * 15) * 0.06;
   }
 
-  // Move relative to camera direction.
-  const direction = new THREE.Vector3(
-    Math.sin(yaw),
-    0,
-    Math.cos(yaw)
-  );
-
-  const right = new THREE.Vector3(
-    Math.cos(yaw),
-    0,
-    -Math.sin(yaw)
-  );
-
-  const speed = 7;
-
-  camera.position.addScaledVector(
-    direction,
-    movement.z * speed * delta
-  );
-
-  camera.position.addScaledVector(
-    right,
-    movement.x * speed * delta
-  );
-
-  camera.position.y = 1.7;
-
+  // Apply look rotation
   camera.rotation.order = "YXZ";
   camera.rotation.y = yaw;
   camera.rotation.x = pitch;
 
-  // Dinosaur idle movement
-  const t = clock.elapsedTime;
+  // Animate Dinosaurs
+  dinosaurs.forEach((dino, index) => {
+    const data = dino.userData;
+    data.time += delta;
+    
+    // Roaming logic (Circle patterns)
+    data.angle += delta * data.speed * 0.2;
+    const targetX = data.centerX + Math.cos(data.angle) * data.radius;
+    const targetZ = data.centerZ + Math.sin(data.angle) * data.radius;
+    
+    dino.position.x = targetX;
+    dino.position.z = targetZ;
+    
+    // Keep dino on the ground
+    dino.position.y = getTerrainHeight(targetX, targetZ);
 
-  dinosaur.position.x = Math.sin(t * 0.18) * 3;
+    // Face movement direction
+    const dx = targetX - dino.position.x;
+    const dz = targetZ - dino.position.z;
+    // Simple rotation based on velocity
+    const nextX = data.centerX + Math.cos(data.angle + 0.1) * data.radius;
+    const nextZ = data.centerZ + Math.sin(data.angle + 0.1) * data.radius;
+    dino.rotation.y = Math.atan2(nextX - targetX, nextZ - targetZ);
 
-  dinosaur.rotation.y =
-    Math.sin(t * 0.2) * 0.15;
+    // Walking Animation
+    const walkSpeed = 5 * data.speed;
+    data.legs[0].rotation.x = Math.sin(data.time * walkSpeed) * 0.5;
+    data.legs[1].rotation.x = Math.cos(data.time * walkSpeed) * 0.5;
+    
+    // Tail sway
+    data.tail.rotation.y = Math.sin(data.time * 2) * 0.2;
+    data.tail.rotation.z = Math.cos(data.time * 1.5) * 0.1;
 
-  dinosaur.position.y =
-    Math.sin(t * 1.2) * 0.04;
-
-  // Gentle forest movement
-  trees.children.forEach((tree, i) => {
-
-    tree.rotation.z =
-      Math.sin(t * 0.3 + i) * 0.003;
+    // Head bob and jaw chomp
+    dino.children[3].position.y = 5.8 + Math.sin(data.time * walkSpeed) * 0.1; // Head
+    data.jaw.rotation.x = Math.max(0, Math.sin(data.time * 3)) * 0.4;
   });
 
   renderer.render(scene, camera);
@@ -175,24 +462,13 @@ function animate() {
 
 animate();
 
-// ----------------------------------
-// RESIZE
-// ----------------------------------
-
+// Resize
 window.addEventListener("resize", () => {
-
-  camera.aspect =
-    window.innerWidth / window.innerHeight;
-
+  camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-
-  renderer.setSize(
-    window.innerWidth,
-    window.innerHeight
-  );
+  renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
 </script>
-
 </body>
 </html>
