@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Jurassic Park - Real T-Rex</title>
+<title>Jurassic Park - Final</title>
 <style>
 * { box-sizing: border-box; }
 body { margin: 0; overflow: hidden; background: #050a05; font-family: 'Segoe UI', sans-serif; color: white; touch-action: none; }
@@ -29,7 +29,7 @@ canvas { display: block; }
 </div>
 <div id="crosshair"></div>
 <div id="joystick"><div id="stick"></div></div>
-<div id="loading">Downloading 3D Model...</div>
+<div id="loading">Downloading 3D T-Rex...</div>
 <div id="start">
   <h1>JURASSIC PARK</h1>
   <p>PREHISTORIC WILDERNESS</p>
@@ -52,8 +52,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 // --- WORLD SETUP ---
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a2b1a);
-scene.fog = new THREE.FogExp2(0x1a2b1a, 0.015);
+scene.background = new THREE.Color(0x2a3b2a); // Brighter jungle sky
+scene.fog = new THREE.FogExp2(0x2a3b2a, 0.01); // Lighter fog
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 600);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -62,13 +62,13 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 1.2;
 document.body.appendChild(renderer.domElement);
 
 // --- LIGHTING ---
-const ambient = new THREE.HemisphereLight(0x5577aa, 0x112211, 1.5);
+const ambient = new THREE.HemisphereLight(0x88aacc, 0x223311, 2.0); 
 scene.add(ambient);
-const sun = new THREE.DirectionalLight(0xffaa55, 3.0);
+const sun = new THREE.DirectionalLight(0xffcc88, 3.0);
 sun.position.set(-50, 80, 30);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
@@ -78,7 +78,7 @@ scene.add(sun);
 
 // --- TERRAIN ---
 function getTerrainHeight(x, z) {
-  return Math.sin(x * 0.02) * Math.cos(z * 0.02) * 12 + Math.sin(x * 0.05) * Math.cos(z * 0.05) * 3;
+  return Math.sin(x * 0.02) * Math.cos(z * 0.02) * 10 + Math.sin(x * 0.05) * Math.cos(z * 0.05) * 2;
 }
 const groundGeo = new THREE.PlaneGeometry(600, 600, 128, 128);
 groundGeo.rotateX(-Math.PI / 2);
@@ -93,7 +93,7 @@ scene.add(ground);
 const trees = new THREE.Group();
 scene.add(trees);
 const barkMat = new THREE.MeshStandardMaterial({ color: 0x2e2214 });
-const leafMat = new THREE.MeshStandardMaterial({ color: 0x112211 });
+const leafMat = new THREE.MeshStandardMaterial({ color: 0x142b14 });
 
 function makeTree(x, z) {
   const tree = new THREE.Group();
@@ -111,10 +111,10 @@ function makeTree(x, z) {
   tree.position.set(x, getTerrainHeight(x, z), z);
   trees.add(tree);
 }
-for (let i = 0; i < 60; i++) {
+for (let i = 0; i < 80; i++) {
   const x = (Math.random() - 0.5) * 300;
   const z = (Math.random() - 0.5) * 300;
-  if (Math.abs(x) > 25 || Math.abs(z) > 25) makeTree(x, z);
+  if (Math.abs(x) > 20 || Math.abs(z) > 20) makeTree(x, z);
 }
 
 // --- REAL 3D T-REX MODEL ---
@@ -123,15 +123,16 @@ let tRexModel = null;
 const loader = new GLTFLoader();
 const loadingDiv = document.getElementById("loading");
 
-// This is a free, high-quality, rigged T-Rex model
+// This is a high-quality, animated T-Rex model hosted on a public server
 const MODEL_URL = 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/T-Rex.glb';
 
 function loadTRex() {
   loadingDiv.style.display = "block";
   loader.load(MODEL_URL, (gltf) => {
     tRexModel = gltf.scene;
-    tRexModel.scale.set(0.5, 0.5, 0.5);
-    tRexModel.position.set(0, getTerrainHeight(0, -30), -30);
+    // Scale and position
+    tRexModel.scale.set(0.08, 0.08, 0.08); 
+    tRexModel.position.set(0, getTerrainHeight(0, -25), -25);
     
     tRexModel.traverse((child) => { 
       if (child.isMesh) { 
@@ -151,11 +152,12 @@ function loadTRex() {
     }
   }, 
   (xhr) => {
-    loadingDiv.innerText = `Loading T-Rex: ${Math.round((xhr.loaded / xhr.total) * 100)}%`;
+    if(xhr.total) loadingDiv.innerText = `Loading T-Rex: ${Math.round((xhr.loaded / xhr.total) * 100)}%`;
+    else loadingDiv.innerText = `Loading T-Rex...`;
   },
   (error) => {
     console.error("Model failed to load", error);
-    loadingDiv.innerText = "Error loading model. Check internet.";
+    loadingDiv.innerText = "Model loading failed. Check internet.";
   });
 }
 loadTRex();
@@ -196,7 +198,7 @@ renderer.domElement.addEventListener("pointermove", e => {
 renderer.domElement.addEventListener("pointerup", () => lookActive = false);
 renderer.domElement.addEventListener("pointercancel", () => lookActive = false);
 
-// --- AUDIO (Procedural Roar via Web Audio API) ---
+// --- AUDIO (Guaranteed Roar) ---
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
 
@@ -231,7 +233,7 @@ document.getElementById("startButton").onclick = () => {
   
   audioCtx = new AudioContext();
   setTimeout(playSynthRoar, 500);
-  setInterval(playSynthRoar, 10000);
+  setInterval(playSynthRoar, 12000); // Roar every 12 seconds
 };
 
 // --- ANIMATION LOOP ---
@@ -242,9 +244,18 @@ function animate() {
   const delta = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
 
+  // Animate T-Rex
   if (tRexMixer) tRexMixer.update(delta);
   if (tRexModel) {
+    // Make the T-Rex walk slowly in a circle
+    tRexModel.position.x = Math.sin(t * 0.2) * 15;
+    tRexModel.position.z = -25 + Math.cos(t * 0.2) * 15;
     tRexModel.position.y = getTerrainHeight(tRexModel.position.x, tRexModel.position.z);
+    
+    // Make sure it faces the direction it's walking
+    const nextX = Math.sin((t + 0.1) * 0.2) * 15;
+    const nextZ = -25 + Math.cos((t + 0.1) * 0.2) * 15;
+    tRexModel.lookAt(nextX, tRexModel.position.y, nextZ);
   }
 
   // Player Movement
@@ -265,6 +276,9 @@ function animate() {
   camera.position.addScaledVector(direction, movement.z * speed * delta);
   camera.position.addScaledVector(right, movement.x * speed * delta);
   camera.position.y = getTerrainHeight(camera.position.x, camera.position.z) + 1.7;
+  
+  // Head bob while walking
+  if (movement.length() > 0) camera.position.y += Math.sin(t * 15) * 0.06;
 
   camera.rotation.order = "YXZ";
   camera.rotation.y = yaw;
