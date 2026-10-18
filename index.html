@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Jurassic Park - Animated T-Rex</title>
+<title>Jurassic Park - Movie T-Rex</title>
 <style>
 * { box-sizing: border-box; }
 body { margin: 0; overflow: hidden; background: #050a05; font-family: 'Segoe UI', sans-serif; color: white; touch-action: none; }
@@ -91,7 +91,7 @@ const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ color:
 ground.receiveShadow = true;
 scene.add(ground);
 
-// --- REALISTIC TREES ---
+// --- TREES ---
 function createBarkTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 256; canvas.height = 256;
@@ -136,16 +136,21 @@ for (let i = 0; i < 70; i++) {
 }
 
 // ==========================================
-// --- YOUR DOWNLOADED T-REX MODEL ---
+// --- T-REX MODEL & BONE LOGIC ---
 // ==========================================
 let tRexMixer = null;
 let tRexModel = null;
 let tRexGroup = new THREE.Group(); 
 scene.add(tRexGroup);
 
+let jawBone = null; // Will try to find the jaw
+let headBone = null; // Will try to find the head
+let isRoaring = false; // Tracks if we should open the jaw
+
 const loader = new GLTFLoader();
 const loadingDiv = document.getElementById("loading");
 
+// YOUR DOWNLOADED FILE
 const MODEL_URL = './niknet_art-tyrannosaurus-3232.glb';
 
 function loadTRex() {
@@ -153,9 +158,11 @@ function loadTRex() {
   
   loader.load(MODEL_URL, (gltf) => {
     tRexModel = gltf.scene;
-    tRexModel.scale.set(3.0, 3.0, 3.0); 
     
-    // Ground it perfectly
+    // 1. MAKE IT MASSIVE (Jurassic Park Size)
+    tRexModel.scale.set(6.0, 6.0, 6.0); 
+    
+    // 2. GROUND IT
     const box = new THREE.Box3().setFromObject(tRexModel);
     const center = box.getCenter(new THREE.Vector3());
     tRexModel.position.y -= box.min.y; 
@@ -163,22 +170,38 @@ function loadTRex() {
     tRexModel.position.z -= center.z;
     
     tRexGroup.add(tRexModel);
-    tRexGroup.position.set(0, getTerrainHeight(0, -25), -25);
+    tRexGroup.position.set(0, getTerrainHeight(0, -30), -30);
     
+    // 3. MOVIE SKIN COLOR & SHADOWS
     tRexModel.traverse((child) => { 
-      if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } 
+      if (child.isMesh) { 
+        child.castShadow = true; 
+        child.receiveShadow = true; 
+        
+        // Force the color to look like the movie T-Rex (Dark Olive Green)
+        if (child.material) {
+           // If it has a texture, tint it. If it doesn't, make it green.
+           child.material.color.setHex(0x2b3a1f); 
+        }
+      } 
+      
+      // 4. SMART BONE FINDER (For Jaw & Head)
+      if (child.isBone) {
+        const name = child.name.toLowerCase();
+        if (name.includes('jaw') || name.includes('mouth')) jawBone = child;
+        if (name.includes('head') || name.includes('neck')) headBone = child;
+      }
     });
     
     loadingDiv.style.display = "none";
 
-    // Setup Animation & Speed it up so it doesn't slide
+    // 5. ANIMATIONS
     tRexMixer = new THREE.AnimationMixer(tRexModel);
     if (gltf.animations.length > 0) {
-      // Look for walk/run animation, otherwise use the first one
+      // Find walk/run animation
       const walkClip = gltf.animations.find(a => a.name.toLowerCase().includes('walk') || a.name.toLowerCase().includes('run')) || gltf.animations[0];
       const action = tRexMixer.clipAction(walkClip);
       action.play();
-      // INCREASE ANIMATION SPEED (If it looks like it's skating, make this higher)
       tRexMixer.timeScale = 1.5; 
     }
   }, 
@@ -223,16 +246,25 @@ renderer.domElement.addEventListener("pointermove", e => {
 renderer.domElement.addEventListener("pointerup", () => lookActive = false);
 renderer.domElement.addEventListener("pointercancel", () => lookActive = false);
 
-// --- AUDIO ---
+// --- AUDIO & ROAR SYNC ---
 const roarAudio = document.getElementById("roarSound");
 
 document.getElementById("startButton").onclick = () => {
   document.getElementById("start").style.display = "none";
   if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+  
+  triggerRoar();
+  setInterval(triggerRoar, 15000);
+};
+
+function triggerRoar() {
   roarAudio.volume = 1.0;
   roarAudio.play().catch(e => {});
-  setInterval(() => { roarAudio.currentTime = 0; roarAudio.play().catch(e => {}); }, 15000);
-};
+  
+  // Make the jaw open for 2.5 seconds
+  isRoaring = true;
+  setTimeout(() => { isRoaring = false; }, 2500);
+}
 
 // --- ANIMATION LOOP ---
 const clock = new THREE.Clock();
@@ -245,30 +277,45 @@ function animate() {
   if (tRexMixer) tRexMixer.update(delta);
   
   if (tRexModel) {
-    const speed = 0.15;
-    const radius = 25;
+    const speed = 0.1; // Slower, heavier walk
+    const radius = 30;
     const angle = t * speed;
 
     const x = Math.cos(angle) * radius;
-    const z = -25 + Math.sin(angle) * radius;
+    const z = -30 + Math.sin(angle) * radius;
 
-    // === HEAVY FOOTSTEP PHYSICS (Bobbing) ===
-    // This makes the whole body bounce slightly with every step
-    const bobAmount = Math.sin(t * 8) * 0.15; // 8 is the step frequency
+    // === REALISTIC HEAVY FOOTSTEP PHYSICS ===
+    // Bounces heavily on each step (frequency 4, height 0.4)
+    const stepFrequency = 4;
+    const bobAmount = Math.abs(Math.sin(t * stepFrequency)) * 0.4; 
+    
+    // Sways side to side
+    const swayAmount = Math.sin(t * (stepFrequency / 2)) * 0.08;
 
     tRexGroup.position.set(x, getTerrainHeight(x, z) + bobAmount, z);
+    tRexGroup.rotation.z = swayAmount;
 
-    // Look forward
+    // Look forward perfectly
     const nextAngle = angle + 0.1;
     const nextX = Math.cos(nextAngle) * radius;
-    const nextZ = -25 + Math.sin(nextAngle) * radius;
-    tRexGroup.lookAt(nextX, tRexGroup.position.y, nextZ);
+    const nextZ = -30 + Math.sin(nextAngle) * radius;
     
-    // Sway side to side like a heavy animal
-    tRexGroup.rotation.z = Math.sin(t * 8) * 0.03;
+    // Smooth rotation
+    const targetRotation = Math.atan2(nextX - x, nextZ - z);
+    tRexGroup.rotation.y = targetRotation + Math.PI; // + Math.PI if it walks backwards
+
+    // === JAW & HEAD MOVEMENT ===
+    if (jawBone) {
+       // If roaring, open wide. If walking, chomp slightly.
+       const targetJawRot = isRoaring ? 0.6 : Math.max(0, Math.sin(t * 2)) * 0.1;
+       // Smoothly interpolate the jaw
+       jawBone.rotation.x += (targetJawRot - jawBone.rotation.x) * 0.1;
+    }
     
-    // If it walks backwards, remove the // below:
-    // tRexGroup.rotateY(Math.PI);
+    if (headBone) {
+       // Head moves slightly while walking
+       headBone.rotation.x = Math.sin(t * stepFrequency) * 0.05;
+    }
   }
 
   // Player Movement
