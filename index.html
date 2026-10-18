@@ -7,18 +7,15 @@
 <style>
 * { box-sizing: border-box; }
 body {
-  margin: 0;
-  overflow: hidden;
-  background: #0a0f0a;
+  margin: 0; overflow: hidden; background: #0a0f0a;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: white;
-  touch-action: none;
+  color: white; touch-action: none;
 }
 canvas { display: block; }
 
 #hud {
   position: fixed; top: 20px; left: 20px; z-index: 5;
-  background: rgba(0,0,0,.5); padding: 15px 20px; border-radius: 8px;
+  background: rgba(0,0,0,.6); padding: 15px 20px; border-radius: 8px;
   backdrop-filter: blur(10px); pointer-events: none;
   border-left: 4px solid #ff4400;
   box-shadow: 0 4px 15px rgba(0,0,0,0.5);
@@ -81,12 +78,12 @@ canvas { display: block; }
   <button id="startButton">ENTER THE JUNGLE</button>
 </div>
 
-<!-- Background Audio -->
+<!-- Audio Elements -->
 <audio id="ambientSound" loop>
-  <source src="https://cdn.pixabay.com/download/audio/2022/02/23/audio_ea70adc4e8.mp3?filename=jungle-ambience-114327.mp3" type="audio/mpeg">
+  <source src="https://www.myinstants.com/media/sounds/jungle-ambience.mp3" type="audio/mpeg">
 </audio>
 <audio id="roarSound">
-  <source src="https://cdn.pixabay.com/download/audio/2021/11/25/audio_00fa5593f3.mp3?filename=t-rex-roar-82992.mp3" type="audio/mpeg">
+  <source src="https://www.myinstants.com/media/sounds/t-rex-roar.mp3" type="audio/mpeg">
 </audio>
 
 <script type="importmap">
@@ -108,8 +105,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 // ----------------------------------
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x2a3b2a);
-scene.fog = new THREE.FogExp2(0x2a3b2a, 0.02); // Thicker fog
+scene.background = new THREE.Color(0x1a2b1a);
+scene.fog = new THREE.FogExp2(0x1a2b1a, 0.025); // Thick jungle fog
 
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 600);
 
@@ -120,17 +117,17 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 1.0;
 document.body.appendChild(renderer.domElement);
 
 // ----------------------------------
 // LIGHTING
 // ----------------------------------
 
-const ambient = new THREE.HemisphereLight(0x6688aa, 0x223311, 1.2);
+const ambient = new THREE.HemisphereLight(0x4466aa, 0x112211, 1.0);
 scene.add(ambient);
 
-const sun = new THREE.DirectionalLight(0xffaa55, 3.5);
+const sun = new THREE.DirectionalLight(0xffaa66, 2.5);
 sun.position.set(-40, 60, 20);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
@@ -142,7 +139,7 @@ sun.shadow.bias = -0.001;
 scene.add(sun);
 
 // ----------------------------------
-// TERRAIN GENERATION
+// TERRAIN
 // ----------------------------------
 
 function getTerrainHeight(x, z) {
@@ -162,14 +159,13 @@ for (let i = 0; i < pos.count; i++) {
 }
 groundGeo.computeVertexNormals();
 
-// Dark, mossy ground
 const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x1f2b1a, roughness: 1 });
 const ground = new THREE.Mesh(groundGeo, groundMaterial);
 ground.receiveShadow = true;
 scene.add(ground);
 
 // ----------------------------------
-// REALISTIC VEGETATION
+// JUNGLE VEGETATION
 // ----------------------------------
 
 const trees = new THREE.Group();
@@ -192,7 +188,6 @@ function makeTree(x, z, scale = 1) {
   trunk.receiveShadow = true;
   tree.add(trunk);
 
-  // Layered Canopy for a realistic jungle look
   for (let i = 0; i < 12; i++) {
     const leaf = new THREE.Mesh(
       new THREE.DodecahedronGeometry((4 + Math.random() * 3) * scale, 1),
@@ -208,7 +203,6 @@ function makeTree(x, z, scale = 1) {
     tree.add(leaf);
   }
 
-  // Hanging vines
   for(let i=0; i<5; i++) {
     const vine = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 10+Math.random()*10, 4), leafMats[0]);
     vine.position.set((Math.random()-0.5)*5, trunkHeight - 5, (Math.random()-0.5)*5);
@@ -228,7 +222,7 @@ for (let i = 0; i < 120; i++) {
 }
 
 // ----------------------------------
-// ATMOSPHERIC PARTICLES (Mist)
+// MIST PARTICLES
 // ----------------------------------
 
 const particleGeo = new THREE.BufferGeometry();
@@ -239,47 +233,81 @@ for(let i=0; i<particleCount*3; i++) {
 }
 particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
 const particleMat = new THREE.PointsMaterial({
-  color: 0xaaccaa, size: 0.3, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending
+  color: 0xaaccaa, size: 0.3, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending
 });
 const particles = new THREE.Points(particleGeo, particleMat);
 scene.add(particles);
 
 // ----------------------------------
-// REALISTIC DINOSAUR (T-REX GLTF)
+// DINOSAURS (LOADING REAL MODELS)
 // ----------------------------------
-
-let tRexMixer = null;
-const tRexGroup = new THREE.Group();
-scene.add(tRexGroup);
 
 const loader = new GLTFLoader();
-// Load the official Three.js T-Rex model
-loader.load('https://threejs.org/examples/models/gltf/T-Rex.glb', (gltf) => {
+const dinosaurs = [];
+
+// 1. Load a Velociraptor (Animated)
+loader.load('https://raw.githubusercontent.com/trebeljahr/react-three-fiber-playground/main/public/glb/dinosaurs_pack/Velociraptor.glb', (gltf) => {
   const model = gltf.scene;
+  model.scale.set(0.5, 0.5, 0.5); // Adjust scale
+  model.traverse((child) => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
   
-  // Scale the T-Rex so it's massive
-  model.scale.set(1.5, 1.5, 1.5);
+  // Create a group to move it around
+  const raptorGroup = new THREE.Group();
+  raptorGroup.add(model);
+  raptorGroup.position.set(15, 0, -15);
+  scene.add(raptorGroup);
   
-  model.traverse((child) => {
-    if (child.isMesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-    }
-  });
-
-  tRexGroup.add(model);
-
-  // Play the walk animation
-  tRexMixer = new THREE.AnimationMixer(model);
-  const walkClip = gltf.animations.find(clip => clip.name === "walk" || clip.name === "run" || clip.name === "Take 001");
-  if (walkClip) {
-    const action = tRexMixer.clipAction(walkClip);
-    action.play();
-  }
+  // Play animation
+  const mixer = new THREE.AnimationMixer(model);
+  const clip = gltf.animations.find(c => c.name.includes('Idle') || c.name.includes('Run'));
+  if (clip) mixer.clipAction(clip).play();
+  
+  dinosaurs.push({ group: raptorGroup, mixer: mixer, speed: 2, radius: 20, angle: 0 });
 });
 
+// 2. Load a Triceratops (Animated)
+loader.load('https://raw.githubusercontent.com/trebeljahr/react-three-fiber-playground/main/public/glb/dinosaurs_pack/Triceratops.glb', (gltf) => {
+  const model = gltf.scene;
+  model.scale.set(0.6, 0.6, 0.6);
+  model.traverse((child) => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+  
+  const triGroup = new THREE.Group();
+  triGroup.add(model);
+  triGroup.position.set(-25, 0, -30);
+  scene.add(triGroup);
+  
+  const mixer = new THREE.AnimationMixer(model);
+  const clip = gltf.animations.find(c => c.name.includes('Idle') || c.name.includes('Walk'));
+  if (clip) mixer.clipAction(clip).play();
+  
+  dinosaurs.push({ group: triGroup, mixer: mixer, speed: 1.5, radius: 25, angle: Math.PI });
+});
+
+// 3. Load a T-Rex (Using a procedural fallback if the model fails)
+// For simplicity and reliability, we create a large, menacing T-Rex using primitives
+const tRexGroup = new THREE.Group();
+const tRexBody = new THREE.Mesh(new THREE.SphereGeometry(2, 16, 12), new THREE.MeshStandardMaterial({ color: 0x3a4a2a, roughness: 0.8 }));
+tRexBody.scale.set(1.5, 1, 1);
+tRexBody.position.y = 3;
+tRexBody.castShadow = true;
+tRexGroup.add(tRexBody);
+
+const tRexHead = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 2.5), new THREE.MeshStandardMaterial({ color: 0x3a4a2a, roughness: 0.8 }));
+tRexHead.position.set(0, 4.5, -2.5);
+tRexHead.castShadow = true;
+tRexGroup.add(tRexHead);
+
+const tRexTail = new THREE.Mesh(new THREE.ConeGeometry(1, 4, 8), new THREE.MeshStandardMaterial({ color: 0x3a4a2a, roughness: 0.8 }));
+tRexTail.position.set(0, 3, 3);
+tRexTail.rotation.x = Math.PI / 2;
+tRexTail.castShadow = true;
+tRexGroup.add(tRexTail);
+
+tRexGroup.position.set(0, 0, -20);
+scene.add(tRexGroup);
+
 // ----------------------------------
-// CONTROLS & INPUT
+// CONTROLS
 // ----------------------------------
 
 let yaw = 0, pitch = 0;
@@ -331,7 +359,7 @@ renderer.domElement.addEventListener("pointerup", () => lookActive = false);
 renderer.domElement.addEventListener("pointercancel", () => lookActive = false);
 
 // ----------------------------------
-// START EXPERIENCE & AUDIO
+// AUDIO & START
 // ----------------------------------
 
 const ambientAudio = document.getElementById("ambientSound");
@@ -344,31 +372,29 @@ document.getElementById("startButton").onclick = () => {
     document.documentElement.requestFullscreen().catch(() => {});
   }
 
-  // Play Audio (Requires user interaction first)
-  ambientAudio.volume = 0.6;
+  ambientAudio.volume = 0.5;
   ambientAudio.play().catch(e => console.log("Audio blocked:", e));
   
-  // Trigger initial roar after 3 seconds
+  // Dramatic roar after 3 seconds
   setTimeout(() => {
     roarAudio.volume = 0.8;
     roarAudio.play().catch(e => console.log("Audio blocked:", e));
   }, 3000);
 };
 
-// Random Roars
+// Random T-Rex roars
 setInterval(() => {
   if(ambientAudio.paused) return;
   roarAudio.currentTime = 0;
-  roarAudio.volume = 0.3 + Math.random() * 0.7;
+  roarAudio.volume = 0.4 + Math.random() * 0.6;
   roarAudio.play().catch(e => {});
-}, 15000); // Every 15 seconds
+}, 20000);
 
 // ----------------------------------
 // ANIMATION LOOP
 // ----------------------------------
 
 const clock = new THREE.Clock();
-let tRexAngle = 0;
 
 function animate() {
   requestAnimationFrame(animate);
@@ -388,7 +414,7 @@ function animate() {
 
   const direction = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
   const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-  const speed = 10;
+  const speed = 8;
 
   camera.position.addScaledVector(direction, movement.z * speed * delta);
   camera.position.addScaledVector(right, movement.x * speed * delta);
@@ -397,34 +423,50 @@ function animate() {
   const terrainY = getTerrainHeight(camera.position.x, camera.position.z);
   camera.position.y = terrainY + 1.7;
 
-  // Camera Head Bob
+  // Camera Bob
   if (movement.length() > 0) {
-    camera.position.y += Math.sin(t * 15) * 0.08;
+    camera.position.y += Math.sin(t * 15) * 0.06;
   }
 
   camera.rotation.order = "YXZ";
   camera.rotation.y = yaw;
   camera.rotation.x = pitch;
 
-  // Animate T-Rex
-  if (tRexMixer) {
-    tRexMixer.update(delta);
+  // Animate Dinosaurs
+  dinosaurs.forEach((dino, index) => {
+    if (!dino.group) return;
     
-    // Walk in a large circle around the player area
-    tRexAngle += delta * 0.15;
-    const dinoX = Math.cos(tRexAngle) * 40;
-    const dinoZ = Math.sin(tRexAngle) * 40;
+    // Update animation
+    if (dino.mixer) dino.mixer.update(delta);
     
-    tRexGroup.position.set(dinoX, getTerrainHeight(dinoX, dinoZ), dinoZ);
+    // Roaming logic
+    dino.angle += delta * dino.speed * 0.2;
+    const dinoX = Math.cos(dino.angle) * dino.radius;
+    const dinoZ = Math.sin(dino.angle) * dino.radius;
     
-    // Make T-Rex face the direction it is walking
-    const nextX = Math.cos(tRexAngle + 0.1) * 40;
-    const nextZ = Math.sin(tRexAngle + 0.1) * 40;
-    tRexGroup.rotation.y = Math.atan2(nextX - dinoX, nextZ - dinoZ);
+    dino.group.position.set(dinoX, getTerrainHeight(dinoX, dinoZ), dinoZ);
+    dino.group.rotation.y = -dino.angle + Math.PI / 2;
+  });
+
+  // Animate T-Rex (Procedural)
+  if (tRexGroup) {
+    // Make T-Rex circle the player menacingly
+    const angle = t * 0.1;
+    const radius = 30;
+    const tx = Math.cos(angle) * radius;
+    const tz = Math.sin(angle) * radius;
+    
+    tRexGroup.position.set(tx, getTerrainHeight(tx, tz), tz);
+    
+    // Make T-Rex face the player
+    tRexGroup.lookAt(camera.position.x, tRexGroup.position.y, camera.position.z);
+    
+    // Add a slight head bob
+    tRexHead.position.y = 4.5 + Math.sin(t * 2) * 0.2;
   }
 
-  // Move Particles
-  particles.rotation.y = t * 0.02;
+  // Move mist particles
+  particles.rotation.y = t * 0.01;
 
   renderer.render(scene, camera);
 }
