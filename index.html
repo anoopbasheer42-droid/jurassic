@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Jurassic Park - Final</title>
+<title>Jurassic Park - Your Real T-Rex</title>
 <style>
 * { box-sizing: border-box; }
 body { margin: 0; overflow: hidden; background: #050a05; font-family: 'Segoe UI', sans-serif; color: white; touch-action: none; }
@@ -136,23 +136,25 @@ for (let i = 0; i < 70; i++) {
 }
 
 // ==========================================
-// --- T-REX LOADING (WITH FALLBACK) ---
+// --- YOUR DOWNLOADED T-REX MODEL ---
 // ==========================================
 let tRexMixer = null;
 let tRexModel = null;
 const loader = new GLTFLoader();
 const loadingDiv = document.getElementById("loading");
 
-// Using a highly reliable CDN link for the 3D model
-const MODEL_URL = 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/T-Rex/glTF-Binary/T-Rex.glb';
+// THE EXACT FILE NAME YOU DOWNLOADED
+const MODEL_URL = './niknet_art-tyrannosaurus-3232.glb';
 
 function loadTRex() {
   loadingDiv.style.display = "block";
-  loadingDiv.innerText = "Downloading 3D T-Rex...";
+  loadingDiv.innerText = "Loading Your T-Rex...";
   
   loader.load(MODEL_URL, (gltf) => {
     tRexModel = gltf.scene;
-    tRexModel.scale.set(2.0, 2.0, 2.0); 
+    
+    // You might need to change 1.5 to 3.0 if it looks too small, or 0.5 if too big
+    tRexModel.scale.set(1.5, 1.5, 1.5); 
     tRexModel.position.set(0, getTerrainHeight(0, -25), -25);
     
     tRexModel.traverse((child) => { 
@@ -169,66 +171,16 @@ function loadTRex() {
   }, 
   (xhr) => {
     if(xhr.total) loadingDiv.innerText = `Loading T-Rex: ${Math.round((xhr.loaded / xhr.total) * 100)}%`;
-    else loadingDiv.innerText = `Loading T-Rex...`;
   },
   (error) => {
-    console.log("GLB Model failed, creating procedural T-Rex instead.");
-    createFallbackTRex();
+    console.error("Model failed to load", error);
+    loadingDiv.innerText = "File not found! Check GitHub upload.";
+    loadingDiv.style.color = "red";
+    loadingDiv.style.fontSize = "24px";
+    loadingDiv.style.fontWeight = "bold";
   });
 }
-
-// If the download fails, build a massive T-Rex out of shapes instantly
-function createFallbackTRex() {
-  loadingDiv.style.display = "none";
-  
-  tRexModel = new THREE.Group();
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0x3a4a2a, roughness: 0.8 });
-  const clawMat = new THREE.MeshStandardMaterial({ color: 0xeeeecc, roughness: 0.5 });
-  
-  // Body
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(1.8, 3, 8, 16), skinMat);
-  body.rotation.z = Math.PI / 2; body.rotation.y = Math.PI / 2; body.position.y = 4.5; body.castShadow = true;
-  tRexModel.add(body);
-
-  // Head
-  const head = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 3.0), skinMat);
-  head.position.set(0, 7.8, -3.8); head.castShadow = true;
-  tRexModel.add(head);
-
-  // Jaw
-  const jaw = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 2.8), skinMat);
-  jaw.position.set(0, 7.0, -3.9); jaw.castShadow = true;
-  tRexModel.add(jaw);
-
-  // Teeth
-  for(let i=0; i<8; i++) {
-    const tooth = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.5, 4), clawMat);
-    tooth.position.set(-0.6 + (i*0.17), 7.3, -5.2);
-    tooth.rotation.x = Math.PI; 
-    tRexModel.add(tooth);
-  }
-
-  // Legs
-  for (const side of [-1, 1]) {
-    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.8, 3, 8, 12), skinMat);
-    leg.position.set(side * 1.5, 2.5, 0); leg.castShadow = true;
-    tRexModel.add(leg);
-    
-    const foot = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 2.2), skinMat);
-    foot.position.set(side * 1.5, 0.3, 1.0);
-    tRexModel.add(foot);
-  }
-
-  // Tail
-  const tail = new THREE.Mesh(new THREE.ConeGeometry(1.5, 6, 8), skinMat);
-  tail.position.set(0, 4.5, 4.0); tail.rotation.x = -Math.PI / 2; tail.castShadow = true;
-  tRexModel.add(tail);
-
-  tRexModel.position.set(0, getTerrainHeight(0, -25), -25);
-  scene.add(tRexModel);
-}
-
-loadTRex(); // Start loading
+loadTRex();
 
 // --- CONTROLS ---
 let yaw = 0, pitch = 0, joyX = 0, joyY = 0;
@@ -301,6 +253,7 @@ function animate() {
     tRexModel.lookAt(nextX, tRexModel.position.y, nextZ);
   }
 
+  // Player Movement
   let forward = 0, sideways = 0;
   if (keys["w"] || keys["arrowup"]) forward += 1;
   if (keys["s"] || keys["arrowdown"]) forward -= 1;
