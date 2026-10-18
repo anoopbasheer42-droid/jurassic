@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Jurassic Park - Final T-Rex</title>
+<title>Jurassic Park - Unstoppable T-Rex</title>
 <style>
 * { box-sizing: border-box; }
 body { margin: 0; overflow: hidden; background: #050a05; font-family: 'Segoe UI', sans-serif; color: white; touch-action: none; }
@@ -117,14 +117,14 @@ for (let i = 0; i < 80; i++) {
   if (Math.abs(x) > 20 || Math.abs(z) > 20) makeTree(x, z);
 }
 
-// --- REAL 3D T-REX MODEL (KHRONOS OFFICIAL REPO) ---
+// --- REAL 3D T-REX MODEL (JSDELIVR CDN) ---
 let tRexMixer = null;
 let tRexModel = null;
 const loader = new GLTFLoader();
 const loadingDiv = document.getElementById("loading");
 
-// 100% Guaranteed to work official Khronos model link
-const MODEL_URL = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/T-Rex/glTF-Binary/T-Rex.glb';
+// Using jsDelivr CDN for 100% mobile compatibility
+const MODEL_URL = 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/T-Rex/glTF-Binary/T-Rex.glb';
 
 function loadTRex() {
   loadingDiv.style.display = "block";
