@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Jurassic Park - Giant T-Rex</title>
+<title>Jurassic Park - Animated T-Rex</title>
 <style>
 * { box-sizing: border-box; }
 body { margin: 0; overflow: hidden; background: #050a05; font-family: 'Segoe UI', sans-serif; color: white; touch-action: none; }
@@ -29,7 +29,7 @@ canvas { display: block; }
 </div>
 <div id="crosshair"></div>
 <div id="joystick"><div id="stick"></div></div>
-<div id="loading">Downloading T-Rex Model...</div>
+<div id="loading">Loading T-Rex...</div>
 <div id="start">
   <h1>JURASSIC PARK</h1>
   <p>MOVIE EDITION</p>
@@ -140,7 +140,7 @@ for (let i = 0; i < 70; i++) {
 // ==========================================
 let tRexMixer = null;
 let tRexModel = null;
-let tRexGroup = new THREE.Group(); // Create a group to handle movement cleanly
+let tRexGroup = new THREE.Group(); 
 scene.add(tRexGroup);
 
 const loader = new GLTFLoader();
@@ -150,27 +150,19 @@ const MODEL_URL = './niknet_art-tyrannosaurus-3232.glb';
 
 function loadTRex() {
   loadingDiv.style.display = "block";
-  loadingDiv.innerText = "Loading Your T-Rex...";
   
   loader.load(MODEL_URL, (gltf) => {
     tRexModel = gltf.scene;
-    
-    // 1. MAKE IT GIANT
     tRexModel.scale.set(3.0, 3.0, 3.0); 
     
-    // 2. STOP IT FROM SINKING (Calculate exact height)
+    // Ground it perfectly
     const box = new THREE.Box3().setFromObject(tRexModel);
     const center = box.getCenter(new THREE.Vector3());
-    
-    // Shift the model so its lowest point is exactly at the ground (y=0) and center it horizontally
     tRexModel.position.y -= box.min.y; 
     tRexModel.position.x -= center.x; 
     tRexModel.position.z -= center.z;
     
-    // Add model to the movement group
     tRexGroup.add(tRexModel);
-    
-    // Start it at a specific location
     tRexGroup.position.set(0, getTerrainHeight(0, -25), -25);
     
     tRexModel.traverse((child) => { 
@@ -179,20 +171,20 @@ function loadTRex() {
     
     loadingDiv.style.display = "none";
 
-    // Play animation
+    // Setup Animation & Speed it up so it doesn't slide
     tRexMixer = new THREE.AnimationMixer(tRexModel);
     if (gltf.animations.length > 0) {
-      tRexMixer.clipAction(gltf.animations[0]).play();
+      // Look for walk/run animation, otherwise use the first one
+      const walkClip = gltf.animations.find(a => a.name.toLowerCase().includes('walk') || a.name.toLowerCase().includes('run')) || gltf.animations[0];
+      const action = tRexMixer.clipAction(walkClip);
+      action.play();
+      // INCREASE ANIMATION SPEED (If it looks like it's skating, make this higher)
+      tRexMixer.timeScale = 1.5; 
     }
   }, 
-  (xhr) => {
-    if(xhr.total) loadingDiv.innerText = `Loading: ${Math.round((xhr.loaded / xhr.total) * 100)}%`;
-  },
-  (error) => {
-    loadingDiv.innerText = "File not found! Check GitHub upload.";
-    loadingDiv.style.color = "red";
-  });
-}
+  (xhr) => { if(xhr.total) loadingDiv.innerText = `Loading: ${Math.round((xhr.loaded / xhr.total) * 100)}%`; },
+  (error) => { loadingDiv.innerText = "File not found!"; loadingDiv.style.color = "red"; }
+});
 loadTRex();
 
 // --- CONTROLS ---
@@ -237,14 +229,9 @@ const roarAudio = document.getElementById("roarSound");
 document.getElementById("startButton").onclick = () => {
   document.getElementById("start").style.display = "none";
   if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
-  
   roarAudio.volume = 1.0;
-  roarAudio.play().catch(e => console.log("Audio blocked by browser"));
-  
-  setInterval(() => {
-    roarAudio.currentTime = 0;
-    roarAudio.play().catch(e => {});
-  }, 15000);
+  roarAudio.play().catch(e => {});
+  setInterval(() => { roarAudio.currentTime = 0; roarAudio.play().catch(e => {}); }, 15000);
 };
 
 // --- ANIMATION LOOP ---
@@ -257,25 +244,30 @@ function animate() {
 
   if (tRexMixer) tRexMixer.update(delta);
   
-  // Perfect Movement Math
   if (tRexModel) {
     const speed = 0.15;
     const radius = 25;
     const angle = t * speed;
 
-    // Move in a circle
     const x = Math.cos(angle) * radius;
     const z = -25 + Math.sin(angle) * radius;
 
-    tRexGroup.position.set(x, getTerrainHeight(x, z), z);
+    // === HEAVY FOOTSTEP PHYSICS (Bobbing) ===
+    // This makes the whole body bounce slightly with every step
+    const bobAmount = Math.sin(t * 8) * 0.15; // 8 is the step frequency
 
-    // Look at the NEXT point on the circle to face forward perfectly
+    tRexGroup.position.set(x, getTerrainHeight(x, z) + bobAmount, z);
+
+    // Look forward
     const nextAngle = angle + 0.1;
     const nextX = Math.cos(nextAngle) * radius;
     const nextZ = -25 + Math.sin(nextAngle) * radius;
     tRexGroup.lookAt(nextX, tRexGroup.position.y, nextZ);
     
-    // Note: If the T-Rex is walking backwards, uncomment the line below:
+    // Sway side to side like a heavy animal
+    tRexGroup.rotation.z = Math.sin(t * 8) * 0.03;
+    
+    // If it walks backwards, remove the // below:
     // tRexGroup.rotateY(Math.PI);
   }
 
