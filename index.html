@@ -38,11 +38,26 @@ canvas { display: block; }
 
 <audio id="roarSound" src="https://actions.google.com/sounds/v1/animals/trex_roar.ogg" preload="auto"></audio>
 
+<!-- Plain JavaScript so the button ALWAYS works -->
+<script>
+  document.getElementById("startButton").addEventListener("click", function() {
+    document.getElementById("start").style.display = "none";
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+    // Trigger the first roar
+    const audio = document.getElementById("roarSound");
+    audio.volume = 1.0;
+    audio.play().catch(e => console.log("Audio blocked"));
+  });
+</script>
+
+<!-- Use unpkg instead of jsdelivr to bypass network blocks -->
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
   }
 }
 </script>
@@ -53,25 +68,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 // ==========================================
-// 1. START BUTTON LOGIC (MOVED TO TOP SO IT ALWAYS WORKS)
-// ==========================================
-const roarAudio = document.getElementById("roarSound");
-
-document.getElementById("startButton").onclick = () => {
-  document.getElementById("start").style.display = "none";
-  if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
-  
-  roarAudio.volume = 1.0;
-  roarAudio.play().catch(e => {});
-  
-  setInterval(() => {
-    roarAudio.currentTime = 0;
-    roarAudio.play().catch(e => {});
-  }, 15000);
-};
-
-// ==========================================
-// 2. WORLD SETUP
+// 1. WORLD SETUP
 // ==========================================
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1a2b1a);
@@ -109,7 +106,7 @@ const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ color:
 ground.receiveShadow = true;
 scene.add(ground);
 
-// --- REALISTIC TREES ---
+// TREES
 function createBarkTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 256; canvas.height = 256;
@@ -146,7 +143,6 @@ function makeRealisticTree(x, z) {
   tree.position.set(x, getTerrainHeight(x, z), z);
   scene.add(tree);
 }
-
 for (let i = 0; i < 60; i++) {
   const x = (Math.random() - 0.5) * 300;
   const z = (Math.random() - 0.5) * 300;
@@ -154,7 +150,7 @@ for (let i = 0; i < 60; i++) {
 }
 
 // ==========================================
-// 3. T-REX MODEL
+// 2. T-REX MODEL
 // ==========================================
 let tRexMixer = null;
 let tRexModel = null;
@@ -163,21 +159,19 @@ scene.add(tRexGroup);
 
 let jawBone = null; 
 let headBone = null; 
-let isRoaring = false; 
 
 const loader = new GLTFLoader();
 const loadingDiv = document.getElementById("loading");
-
 const MODEL_URL = './niknet_art-tyrannosaurus-3232.glb';
 
 function loadTRex() {
   loadingDiv.style.display = "block";
+  loadingDiv.innerText = "Loading...";
   
   loader.load(MODEL_URL, (gltf) => {
     tRexModel = gltf.scene;
-    tRexModel.scale.set(5.0, 5.0, 5.0); // MASSIVE
+    tRexModel.scale.set(5.0, 5.0, 5.0); 
     
-    // Ground it perfectly
     const box = new THREE.Box3().setFromObject(tRexModel);
     const center = box.getCenter(new THREE.Vector3());
     tRexModel.position.y -= box.min.y; 
@@ -187,12 +181,10 @@ function loadTRex() {
     tRexGroup.add(tRexModel);
     tRexGroup.position.set(0, getTerrainHeight(0, -30), -30);
     
-    // Apply Movie Color Safely
     tRexModel.traverse((child) => { 
       if (child.isMesh) { 
         child.castShadow = true; 
         child.receiveShadow = true; 
-        
         try {
           if (child.material) {
              if (Array.isArray(child.material)) {
@@ -201,10 +193,8 @@ function loadTRex() {
                  if(child.material.color) child.material.color.setHex(0x2b3a1f); 
              }
           }
-        } catch(e) {} // Ignore color errors
+        } catch(e) {} 
       } 
-      
-      // Find Jaw Bone safely
       if (child.isBone) {
         const name = child.name.toLowerCase();
         if (name.includes('jaw') || name.includes('mouth')) jawBone = child;
@@ -223,12 +213,12 @@ function loadTRex() {
     }
   }, 
   (xhr) => { if(xhr.total) loadingDiv.innerText = `Loading: ${Math.round((xhr.loaded / xhr.total) * 100)}%`; },
-  (error) => { loadingDiv.innerText = "File not found! Check GitHub."; loadingDiv.style.color = "red"; }
+  (error) => { loadingDiv.innerText = "T-Rex file not found. Check GitHub."; loadingDiv.style.color = "red"; }
 });
 loadTRex();
 
 // ==========================================
-// 4. CONTROLS
+// 3. CONTROLS
 // ==========================================
 let yaw = 0, pitch = 0, joyX = 0, joyY = 0;
 const keys = {};
@@ -266,7 +256,7 @@ renderer.domElement.addEventListener("pointerup", () => lookActive = false);
 renderer.domElement.addEventListener("pointercancel", () => lookActive = false);
 
 // ==========================================
-// 5. ANIMATION LOOP
+// 4. ANIMATION LOOP
 // ==========================================
 const clock = new THREE.Clock();
 
@@ -285,7 +275,6 @@ function animate() {
     const x = Math.cos(angle) * radius;
     const z = -30 + Math.sin(angle) * radius;
 
-    // Heavy Footstep Bobbing
     const stepFrequency = 4;
     const bobAmount = Math.abs(Math.sin(t * stepFrequency)) * 0.4; 
     const swayAmount = Math.sin(t * (stepFrequency / 2)) * 0.08;
@@ -300,10 +289,8 @@ function animate() {
     const targetRotation = Math.atan2(nextX - x, nextZ - z);
     tRexGroup.rotation.y = targetRotation + Math.PI; 
 
-    // Jaw Movement (Wrapped in try/catch to prevent crashes)
     try {
       if (jawBone) {
-         // Opens when roaring, chomps when walking
          const targetJawRot = (roarAudio.paused === false) ? 0.6 : Math.max(0, Math.sin(t * 2)) * 0.1;
          jawBone.rotation.x += (targetJawRot - jawBone.rotation.x) * 0.1;
       }
