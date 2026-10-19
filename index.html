@@ -131,6 +131,13 @@ header {
   border:1px solid var(--border); color:var(--muted); border-radius:6px;
   font-weight:600; font-size:11px; cursor:pointer; font-family:inherit;
 }
+.btn-danger-action {
+  width:100%; padding:9px; margin-top:8px; background:rgba(239,68,68,0.1);
+  border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:6px;
+  font-weight:600; font-size:11px; cursor:pointer; font-family:inherit;
+  transition:all 0.15s;
+}
+.btn-danger-action:active { background:rgba(239,68,68,0.25); }
 .notice { font-size:10px; color:var(--muted); line-height:1.5; padding:8px; background:var(--panel2); border-radius:6px; border-left:3px solid var(--yellow); margin-top:10px; }
 .notice.warn-box { border-left-color:var(--red); color:#fca5a5; }
 .funnel-row { display:flex; justify-content:space-between; padding:3px 0; font-size:10px; color:var(--muted); border-top:1px solid rgba(255,255,255,0.05); margin-top:4px; padding-top:4px; }
@@ -214,6 +221,7 @@ header {
       <div class="trade-row"><span>Position Size</span><span id="size">—</span></div>
       <div class="trade-row"><span>Risk ($)</span><span id="risk">—</span></div>
       <div class="trade-row"><span>Status</span><span id="trade-status">—</span></div>
+      <button class="btn-danger-action" id="btn-clear-trade">Clear Ongoing Trade</button>
     </div>
 
     <div class="card">
@@ -573,7 +581,6 @@ function computeTimeframeZones(candles) {
 
   function mergeAndPick(zones, direction) {
     if (zones.length === 0) return null;
-    // Merge overlapping zones
     zones.sort((a,b) => a.bottom - b.bottom);
     const merged = [];
     for (const z of zones) {
@@ -590,7 +597,6 @@ function computeTimeframeZones(candles) {
       }
       if (!absorbed) merged.push({ ...z, sources:[...z.sources] });
     }
-    // Rank by score and proximity to price
     const valid = merged.filter(z => direction === 'buy' ? z.top < price : z.bottom > price);
     if (valid.length === 0) return null;
     for (const z of valid) {
@@ -700,16 +706,16 @@ function generateSignal(tfCandles, allTf) {
   const bullOB = recentOB.filter(o => o.type === 'bullish' && price >= o.bottom && price <= o.top + atr*1.5);
   const bearOB = recentOB.filter(o => o.type === 'bearish' && price <= o.top && price >= o.bottom - atr*1.5);
   if (bullOB.length) { buyScore += 2; reasons.push('Bull OB'); bullPatterns.push('OB'); }
-  if (bearOB.length) { sellScore += 2; reasons.push('Bear OB'); bearPatterns.push('OB'); }
+  if (bearOB.length) { sellScore += 2; reasons.push('Bear OB'); bullPatterns.push('OB'); }
 
   const recentFVG = fvgs.filter(f => f.idx > tfCandles.length - 30);
   if (recentFVG.some(f => f.type === 'bullish' && price >= f.bottom && price <= f.top)) { buyScore += 1; bullPatterns.push('FVG'); }
   if (recentFVG.some(f => f.type === 'bearish' && price >= f.bottom && price <= f.top)) { sellScore += 1; bearPatterns.push('FVG'); }
 
   if (eng.some(p => p.type === 'bullish' && p.idx > tfCandles.length - 3)) { buyScore += 2; bullPatterns.push('Engulf'); reasons.push('Bull engulf'); }
-  if (eng.some(p => p.type === 'bearish' && p.idx > tfCandles.length - 3)) { sellScore += 2; bullPatterns.push('Engulf'); reasons.push('Bear engulf'); }
+  if (eng.some(p => p.type === 'bearish' && p.idx > tfCandles.length - 3)) { sellScore += 2; bearPatterns.push('Engulf'); reasons.push('Bear engulf'); }
   if (pins.some(p => p.type === 'bullish' && p.idx > tfCandles.length - 3)) { buyScore += 1; bullPatterns.push('Pin'); }
-  if (pins.some(p => p.type === 'bearish' && p.idx > tfCandles.length - 3)) { sellScore += 1; bullPatterns.push('Pin'); }
+  if (pins.some(p => p.type === 'bearish' && p.idx > tfCandles.length - 3)) { sellScore += 1; bearPatterns.push('Pin'); }
   if (sweep?.type === 'bullish') { buyScore += 3; reasons.push('Bull sweep'); bullPatterns.push('Sweep'); }
   if (sweep?.type === 'bearish') { sellScore += 3; reasons.push('Bear sweep'); bearPatterns.push('Sweep'); }
   if (dtb.some(p => p.type === 'double-bottom')) { buyScore += 2; bullPatterns.push('Dbl-Bot'); }
@@ -737,7 +743,6 @@ function generateSignal(tfCandles, allTf) {
     tp = entry - (200 * 0.0001);
   }
 
-  // Target: SL risk = $3.00, TP profit = $4.00 (Fixed target sizing logic)
   const targetRiskAmt = 3.00;
   const slPips = Math.abs(entry - sl) * 10000;
   const pipValue = 0.10;
@@ -788,7 +793,6 @@ function drawChart() {
   const yScale = ch / (top - bot);
   const yOf = p => pad.t + (top - p) * yScale;
 
-  // Grid
   ctx.strokeStyle = '#1f2937';
   ctx.lineWidth = 0.5;
   ctx.font = '10px "Courier New",monospace';
@@ -801,19 +805,14 @@ function drawChart() {
     ctx.fillText(p.toFixed(5), pad.l - 6, y + 3);
   }
 
-  // === DAY ENTRY ZONES (thicker, solid) ===
   if (STATE.showZones) {
     drawEntryZone(ctx, STATE.zones.day.buy, pad, W, top, bot, yOf, '#10b981', 'DAY BUY', false);
     drawEntryZone(ctx, STATE.zones.day.sell, pad, W, top, bot, yOf, '#ef4444', 'DAY SELL', false);
-
-    // === HOUR ENTRY ZONES (dashed, subtler) ===
     drawEntryZone(ctx, STATE.zones.hour.buy, pad, W, top, bot, yOf, '#34d399', '1H BUY', true);
     drawEntryZone(ctx, STATE.zones.hour.sell, pad, W, top, bot, yOf, '#f87171', '1H SELL', true);
   }
 
-  // === MAJOR S/R LEVELS ===
   if (STATE.showSR && STATE.srLevels) {
-    // Supports
     STATE.srLevels.supports.forEach((lvl, i) => {
       if (lvl.price < bot || lvl.price > top) return;
       const y = yOf(lvl.price);
@@ -829,7 +828,6 @@ function drawChart() {
       const label = `S${i+1} ${lvl.price.toFixed(5)}` + (lvl.touches > 1 ? ` (${lvl.touches}x)` : '');
       ctx.fillText(label, pad.l + 3, y - 3);
     });
-    // Resistances
     STATE.srLevels.resistances.forEach((lvl, i) => {
       if (lvl.price < bot || lvl.price > top) return;
       const y = yOf(lvl.price);
@@ -847,7 +845,6 @@ function drawChart() {
     });
   }
 
-  // === OBs + FVGs ===
   const sig = STATE.activeSignal;
   if (STATE.showOB && sig?.patterns) {
     const offset = candles.length - visible.length;
@@ -871,7 +868,6 @@ function drawChart() {
     }
   }
 
-  // === CANDLES ===
   for (let i = 0; i < visible.length; i++) {
     const c = visible[i];
     const x = pad.l + i * xStep + xStep/2;
@@ -884,7 +880,6 @@ function drawChart() {
     ctx.fillRect(x - bw/2, Math.min(yO,yC), bw, Math.max(1, Math.abs(yC-yO)));
   }
 
-  // === ACTIVE TRADE ===
   if (STATE.activeTrade) {
     const t = STATE.activeTrade;
     const drawLvl = (price, color, label) => {
@@ -905,7 +900,6 @@ function drawChart() {
     drawLvl(t.tp, '#10b981', 'TP');
   }
 
-  // === LIVE PRICE LINE ===
   if (STATE.price) {
     const y = yOf(STATE.price);
     if (y >= pad.t && y <= pad.t + ch) {
@@ -921,7 +915,6 @@ function drawChart() {
     }
   }
 
-  // === LEGEND ===
   drawLegend(ctx, W, H, pad);
 }
 
@@ -935,12 +928,10 @@ function drawEntryZone(ctx, zone, pad, W, top, bot, yOf, color, label, dashed) {
   const y2 = yOf(zBot);
   const height = Math.max(2, y2 - y1);
 
-  // Fill
   const rgb = color === '#10b981' || color === '#34d399' ? '16,185,129' : '239,68,68';
   ctx.fillStyle = `rgba(${rgb},${dashed ? 0.08 : 0.14})`;
   ctx.fillRect(pad.l, y1, W - pad.l - pad.r, height);
 
-  // Borders
   ctx.strokeStyle = color;
   ctx.lineWidth = dashed ? 1 : 1.5;
   if (dashed) ctx.setLineDash([5, 4]);
@@ -950,14 +941,12 @@ function drawEntryZone(ctx, zone, pad, W, top, bot, yOf, color, label, dashed) {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // Label
   ctx.fillStyle = color;
   ctx.font = 'bold 9px monospace';
   ctx.textAlign = 'right';
   const sourcesStr = zone.sources ? ' [' + zone.sources.join('+') + ']' : '';
   ctx.fillText(label + sourcesStr, W - pad.r - 4, y1 + 10);
 
-  // Price range text
   if (height > 18) {
     ctx.font = '8px monospace';
     ctx.fillStyle = color;
@@ -1098,7 +1087,7 @@ function takeTrade() {
   const t = {
     id: Date.now(), type: sig.signal,
     entry: sig.entry, sl: sig.sl, tp: sig.tp,
-    size: sig.size, riskAmt: 3.00, // Fixed SL risk $3.00
+    size: sig.size, riskAmt: 3.00,
     status: 'ACTIVE',
     openTime: new Date().toISOString(), pnl: 0,
   };
@@ -1115,11 +1104,11 @@ function checkActiveTrade() {
   const p = STATE.price;
   let closed = false;
   if (t.type === 'BUY') {
-    if (p >= t.tp) { t.status = 'WIN'; t.pnl = 4.00; closed = true; } // Fixed TP profit $4.00
-    else if (p <= t.sl) { t.status = 'LOSS'; t.pnl = -3.00; closed = true; } // Fixed SL risk -$3.00
+    if (p >= t.tp) { t.status = 'WIN'; t.pnl = 4.00; closed = true; }
+    else if (p <= t.sl) { t.status = 'LOSS'; t.pnl = -3.00; closed = true; }
   } else {
-    if (p <= t.tp) { t.status = 'WIN'; t.pnl = 4.00; closed = true; } // Fixed TP profit $4.00
-    else if (p >= t.sl) { t.status = 'LOSS'; t.pnl = -3.00; closed = true; } // Fixed SL risk -$3.00
+    if (p <= t.tp) { t.status = 'WIN'; t.pnl = 4.00; closed = true; }
+    else if (p >= t.sl) { t.status = 'LOSS'; t.pnl = -3.00; closed = true; }
   }
   if (closed) {
     t.closeTime = new Date().toISOString();
@@ -1148,7 +1137,6 @@ function updateUI() {
   dpEl.textContent = (dayPnl >= 0 ? '+$' : '-$') + Math.abs(dayPnl).toFixed(2);
   dpEl.style.color = dayPnl >= 0 ? 'var(--green)' : 'var(--red)';
 
-  // Zones panel
   const hb = STATE.zones.hour.buy, hs = STATE.zones.hour.sell;
   const db = STATE.zones.day.buy, ds = STATE.zones.day.sell;
   const fmtZone = (z) => z ? `${z.bottom.toFixed(5)} – ${z.top.toFixed(5)}` : '—';
@@ -1266,11 +1254,9 @@ async function refreshCandles() {
     STATE.price = cur[cur.length - 1].close;
   }
 
-  // Recompute zones on each refresh (hour = 1h candles, day = 4h candles)
   if (STATE.candles['1h'].length > 20) STATE.zones.hour = computeTimeframeZones(STATE.candles['1h']) || { buy:null, sell:null };
   if (STATE.candles['4h'].length > 20) STATE.zones.day = computeTimeframeZones(STATE.candles['4h']) || { buy:null, sell:null };
 
-  // Recompute S/R levels for current TF
   STATE.srLevels = findKeyLevels(cur);
 
   const sig = generateSignal(STATE.candles[STATE.currentTf], STATE.candles);
@@ -1337,7 +1323,6 @@ document.getElementById('tf-group').addEventListener('click', e => {
   refreshCandles();
 });
 
-// Chart layer toggles
 document.getElementById('tg-sr').addEventListener('click', function() {
   STATE.showSR = !STATE.showSR;
   this.classList.toggle('on', STATE.showSR);
@@ -1355,6 +1340,19 @@ document.getElementById('tg-ob').addEventListener('click', function() {
   this.classList.toggle('on', STATE.showOB);
   save();
   drawChart();
+});
+
+// Clear ongoing trade action
+document.getElementById('btn-clear-trade').addEventListener('click', () => {
+  if (!STATE.activeTrade) {
+    addAlert('No active trade to clear.', 'neutral');
+    return;
+  }
+  if (!confirm('Clear the ongoing active trade without saving it to the journal?')) return;
+  STATE.activeTrade = null;
+  save();
+  addAlert('Ongoing trade cleared manually.', 'neutral');
+  updateUI();
 });
 
 document.getElementById('btn-reset').addEventListener('click', () => {
