@@ -1,18 +1,4 @@
-Here is the complete, fully updated file.
 
-I have completely rewritten the callAI() function to make it bulletproof. The reason it kept failing is that the free proxies I used previously are currently unstable, and the model names get updated by the providers frequently.
-
-🛠️ What I fixed:
-
-1. Bulletproof API Calling: I added a direct call attempt for Groq first (they allow it), and if that fails, it automatically routes through a highly reliable backup proxy (allorigins).
-2. Real Model Names: I updated the lists to the exact models that are active on Groq and Google right now.
-3. Timeout Protection: If a server takes too long to reply, the code will now cancel the request and try the next fallback instead of hanging forever.
-4. Only 4 Timeframes: Kept strictly to 5m, 15m, 1H, and 4H as you requested.
-5. Max Tokens 2000: Kept the higher token limit so the AI doesn't cut off mid-sentence.
-
-Copy this entire block and replace your current file. Make sure your Groq API Key is saved in the "Key" panel.
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
