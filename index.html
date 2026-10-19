@@ -713,9 +713,9 @@ function generateSignal(tfCandles, allTf) {
   if (recentFVG.some(f => f.type === 'bearish' && price >= f.bottom && price <= f.top)) { sellScore += 1; bearPatterns.push('FVG'); }
 
   if (eng.some(p => p.type === 'bullish' && p.idx > tfCandles.length - 3)) { buyScore += 2; bullPatterns.push('Engulf'); reasons.push('Bull engulf'); }
-  if (eng.some(p => p.type === 'bearish' && p.idx > tfCandles.length - 3)) { sellScore += 2; bearPatterns.push('Engulf'); reasons.push('Bear engulf'); }
+  if (eng.some(p => p.type === 'bearish' && p.idx > tfCandles.length - 3)) { sellScore += 2; bullPatterns.push('Engulf'); reasons.push('Bear engulf'); }
   if (pins.some(p => p.type === 'bullish' && p.idx > tfCandles.length - 3)) { buyScore += 1; bullPatterns.push('Pin'); }
-  if (pins.some(p => p.type === 'bearish' && p.idx > tfCandles.length - 3)) { sellScore += 1; bearPatterns.push('Pin'); }
+  if (pins.some(p => p.type === 'bearish' && p.idx > tfCandles.length - 3)) { sellScore += 1; bullPatterns.push('Pin'); }
   if (sweep?.type === 'bullish') { buyScore += 3; reasons.push('Bull sweep'); bullPatterns.push('Sweep'); }
   if (sweep?.type === 'bearish') { sellScore += 3; reasons.push('Bear sweep'); bearPatterns.push('Sweep'); }
   if (dtb.some(p => p.type === 'double-bottom')) { buyScore += 2; bullPatterns.push('Dbl-Bot'); }
@@ -735,12 +735,13 @@ function generateSignal(tfCandles, allTf) {
   if (!signal) return { signal:null, patterns, score:{ buy:buyScore, sell:sellScore } };
 
   let entry = price, sl, tp;
+  // Updated: SL = 15 pips (0.0015), TP = 20 pips (0.0020)
   if (signal === 'BUY') {
-    sl = entry - (150 * 0.0001);
-    tp = entry + (200 * 0.0001);
+    sl = entry - (15 * 0.0001);
+    tp = entry + (20 * 0.0001);
   } else {
-    sl = entry + (150 * 0.0001);
-    tp = entry - (200 * 0.0001);
+    sl = entry + (15 * 0.0001);
+    tp = entry - (20 * 0.0001);
   }
 
   const targetRiskAmt = 3.00;
@@ -751,7 +752,7 @@ function generateSignal(tfCandles, allTf) {
   const actualRisk = slPips * pipValue * size;
 
   return {
-    signal, entry, sl, tp, atr, rr: STATE.settings.rr,
+    signal, entry, sl, tp, atr, rr: '1 : 1.33',
     score: signal === 'BUY' ? buyScore : sellScore,
     reasons, patterns, size, riskAmt: actualRisk, slPips,
     support: sr.support, resistance: sr.resistance, rsi,
@@ -1155,7 +1156,7 @@ function updateUI() {
     document.getElementById('entry').textContent = sig.entry.toFixed(5);
     document.getElementById('sl').textContent = sig.sl.toFixed(5);
     document.getElementById('tp').textContent = sig.tp.toFixed(5);
-    document.getElementById('rr').textContent = '1 : ' + sig.rr;
+    document.getElementById('rr').textContent = sig.rr;
     document.getElementById('size').textContent = sig.size.toFixed(2) + ' lots';
     document.getElementById('risk').textContent = '$3.00';
   } else {
@@ -1248,15 +1249,17 @@ async function refreshCandles() {
   const results = await Promise.all(tfs.map(tf => fetchCandles(tf)));
   results.forEach((data, i) => { if (data.length > 0) STATE.candles[tfs[i]] = data; });
 
-  const cur = STATE.candles[STATE.currentTf];
-  if (cur.length > 0) {
+  // Fix: Always derive the live price from the fastest timeframe (5m) so higher timeframes (15m, 1h, 4h) don't freeze the price
+  const fastCur = STATE.candles['5m'];
+  if (fastCur.length > 0) {
     STATE.prevPrice = STATE.price;
-    STATE.price = cur[cur.length - 1].close;
+    STATE.price = fastCur[fastCur.length - 1].close;
   }
 
   if (STATE.candles['1h'].length > 20) STATE.zones.hour = computeTimeframeZones(STATE.candles['1h']) || { buy:null, sell:null };
   if (STATE.candles['4h'].length > 20) STATE.zones.day = computeTimeframeZones(STATE.candles['4h']) || { buy:null, sell:null };
 
+  const cur = STATE.candles[STATE.currentTf];
   STATE.srLevels = findKeyLevels(cur);
 
   const sig = generateSignal(STATE.candles[STATE.currentTf], STATE.candles);
@@ -1342,7 +1345,6 @@ document.getElementById('tg-ob').addEventListener('click', function() {
   drawChart();
 });
 
-// Clear ongoing trade action
 document.getElementById('btn-clear-trade').addEventListener('click', () => {
   if (!STATE.activeTrade) {
     addAlert('No active trade to clear.', 'neutral');
