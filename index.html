@@ -854,7 +854,7 @@
             travelComets.push({ grp: cg, dir, speed: 2.2 + Math.random() * 2.8, life: 1 });
             milkyWayGroup.add(cg);
         }
-        let travelCometTimer = 160;
+        let travelCometTimer = 5000;
         const meteoroids = [];
         (function buildMeteoroids() {
             const geoTypes = [() => new THREE.DodecahedronGeometry(0.4 + Math.random() * 0.9, 0), () => new THREE.IcosahedronGeometry(0.3 + Math.random() * 0.8, 0), () => new THREE.BoxGeometry(0.6 + Math.random() * 0.7, 0.4 + Math.random() * 0.5, 0.5 + Math.random() * 0.6)];
@@ -993,69 +993,27 @@
 
         solarSystemGroup.add(sunGroup);
 
-        // === 3I/ATLAS INTERSTELLAR OBJECT ===
-        const atlasGroup = new THREE.Group();
-        
-        // Elongated Core
-        const atlasGeo = new THREE.CylinderGeometry(0.04, 0.08, 0.6, 8);
-        const atlasMat = new THREE.MeshStandardMaterial({ 
-            color: 0x223344, 
-            emissive: 0x0033aa, 
-            emissiveIntensity: 0.4, 
-            roughness: 0.7,
-            metalness: 0.1
-        });
-        const atlasCore = new THREE.Mesh(atlasGeo, atlasMat);
-        atlasCore.rotation.x = Math.PI / 4;
-        atlasGroup.add(atlasCore);
-
-        // Glowing Coma Head
-        const atlasGlowCanvas = _canvas(128, 128);
-        {
-            const ctx = atlasGlowCanvas.getContext('2d');
-            const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-            g.addColorStop(0, 'rgba(200,255,255,1)');
-            g.addColorStop(0.2, 'rgba(100,200,255,0.8)');
-            g.addColorStop(0.5, 'rgba(0,100,255,0.3)');
-            g.addColorStop(1, 'rgba(0,50,150,0)');
-            ctx.fillStyle = g;
-            ctx.fillRect(0, 0, 128, 128);
-        }
-        const atlasGlow = new THREE.Sprite(new THREE.SpriteMaterial({ 
-            map: new THREE.CanvasTexture(atlasGlowCanvas), 
-            transparent: true, blending: THREE.AdditiveBlending, depthWrite: false 
-        }));
-        atlasGlow.scale.set(1.5, 1.5, 1);
-        atlasGroup.add(atlasGlow);
-
-        // Dynamic Ion Tail
-        const atlasTailCanvas = _canvas(128, 512);
-        {
-            const ctx = atlasTailCanvas.getContext('2d');
-            const g = ctx.createLinearGradient(0, 0, 0, 512);
-            g.addColorStop(0, 'rgba(150,220,255,1)');
-            g.addColorStop(0.1, 'rgba(100,180,255,0.8)');
-            g.addColorStop(0.5, 'rgba(0,100,200,0.3)');
-            g.addColorStop(1, 'rgba(0,50,100,0)');
-            ctx.fillStyle = g;
-            ctx.fillRect(0, 0, 128, 512);
-        }
-        const atlasTailTex = new THREE.CanvasTexture(atlasTailCanvas);
-        const atlasTailGeo = new THREE.ConeGeometry(0.4, 5.0, 16, 1, true);
-        const atlasTailMat = new THREE.MeshBasicMaterial({ 
-            map: atlasTailTex, 
-            transparent: true, 
-            blending: THREE.AdditiveBlending, 
-            depthWrite: false, 
-            side: THREE.DoubleSide 
-        });
-        const atlasTail = new THREE.Mesh(atlasTailGeo, atlasTailMat);
-        atlasTail.rotation.x = -Math.PI / 2; 
-        atlasTail.position.z = -2.5; 
-        atlasGroup.add(atlasTail);
-
-        atlasGroup.visible = false;
-        solarSystemGroup.add(atlasGroup);
+        // === VOYAGER 1 ===
+        const voyagerGroup = new THREE.Group();
+        const vMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9, roughness: 0.3 });
+        const vDish = new THREE.Mesh(new THREE.SphereGeometry(0.15, 32, 16, 0, Math.PI * 2, 0, Math.PI / 3), vMat);
+        vDish.rotation.x = -Math.PI / 2;
+        vDish.position.z = 0.1;
+        voyagerGroup.add(vDish);
+        const vBody = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.2, 10), vMat);
+        vBody.rotation.x = Math.PI / 2;
+        vBody.position.z = -0.1;
+        voyagerGroup.add(vBody);
+        const vBoom = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.4, 8), vMat);
+        vBoom.position.set(0.15, -0.1, 0);
+        vBoom.rotation.z = Math.PI / 4;
+        voyagerGroup.add(vBoom);
+        const vRecord = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.01, 16), new THREE.MeshStandardMaterial({ color: 0xffcc00, metalness: 1.0, roughness: 0.2 }));
+        vRecord.rotation.x = Math.PI / 2;
+        vRecord.position.set(0, 0, -0.2);
+        voyagerGroup.add(vRecord);
+        voyagerGroup.scale.set(1.5, 1.5, 1.5);
+        solarSystemGroup.add(voyagerGroup);
 
         const PLANET_DATA = [
             { name:'Mercury', r:0.20, o:6,   fb:['#8a7f75', '100,90,80'],   spd:0.42, rotSpd:0.005, roughness:0.95, metalness:0.05,
@@ -1191,10 +1149,11 @@
                 grp.add(ring2);
             }
 
+            // Light Orbit Line
             const pts = [];
             for (let i = 0; i <= 160; i++) { const a = (i / 160) * Math.PI * 2; pts.push(new THREE.Vector3(Math.cos(a) * p.o, 0, Math.sin(a) * p.o)); }
             const og = new THREE.BufferGeometry().setFromPoints(pts);
-            const om = new THREE.LineBasicMaterial({ color: 0x6e7f95, transparent: true, opacity: 0.08 });
+            const om = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 });
             solarSystemGroup.add(new THREE.Line(og, om));
 
             const moons = [];
@@ -1229,7 +1188,7 @@
                         mPts.push(new THREE.Vector3(Math.cos(a) * m.o, 0, Math.sin(a) * m.o));
                     }
                     const mOrbitGeo = new THREE.BufferGeometry().setFromPoints(mPts);
-                    const mOrbitMat = new THREE.LineBasicMaterial({ color: 0x556677, transparent: true, opacity: 0.04 });
+                    const mOrbitMat = new THREE.LineBasicMaterial({ color: 0xdddddd, transparent: true, opacity: 0.15 });
                     moonGrp.add(new THREE.Line(mOrbitGeo, mOrbitMat));
 
                     if (m.incl !== undefined) moonGrp.rotation.x = m.incl;
@@ -1705,6 +1664,30 @@
         const _tempBlendedTarget = new THREE.Vector3(0, 0, 0);
         const _tempDesiredCamPos = new THREE.Vector3(0, 0, 0);
 
+        const shootingStars = [];
+        let shootingStarTimer = 500;
+
+        function spawnShootingStar() {
+            const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(10, 0, 0)]);
+            const mat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1 });
+            const line = new THREE.Line(geo, mat);
+            
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            const r = 1500 + Math.random() * 500;
+            line.position.set(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+            
+            line.rotation.z = Math.random() * Math.PI;
+            line.rotation.y = Math.random() * Math.PI;
+            line.rotation.x = Math.random() * Math.PI;
+            
+            const speed = 50 + Math.random() * 100;
+            const dir = new THREE.Vector3((Math.random()-0.5)*2, (Math.random()-0.5)*2, (Math.random()-0.5)*2).normalize();
+            
+            scene.add(line);
+            shootingStars.push({ mesh: line, dir, speed, life: 1 });
+        }
+
         function animate() {
             requestAnimationFrame(animate);
             const nowMs = Date.now();
@@ -1799,44 +1782,35 @@
                 }
             }
 
-            // === 3I/ATLAS HYPERBOLIC ORBIT (ONCE EVERY 1 HOUR) ===
-            const hourProgress = (nowMs % 3600000) / 3600000; // 0 to 1 over 1 hour
-            
-            // It swoops in during the last 15 minutes and first 15 minutes of the hour
+            // Voyager 1 Trajectory
+            if (voyagerGroup) {
+                const vDist = 80 + ts * 0.5; 
+                voyagerGroup.position.set(vDist * 0.8, vDist * 0.3, vDist * 0.4);
+                voyagerGroup.lookAt(0,0,0);
+            }
+
+            // 3I/ATLAS HYPERBOLIC ORBIT (ONCE EVERY 1 HOUR)
+            const hourProgress = (nowMs % 3600000) / 3600000;
             if (hourProgress > 0.75 || hourProgress < 0.25) {
                 atlasGroup.visible = true;
-                
-                // Map 0.75->1.0 and 0.0->0.25 to an angle (0 to 2PI)
                 let orbitAngle;
                 if (hourProgress > 0.75) {
-                    orbitAngle = (hourProgress - 0.75) * 4 * Math.PI; // 0 to PI
+                    orbitAngle = (hourProgress - 0.75) * 4 * Math.PI;
                 } else {
-                    orbitAngle = Math.PI + hourProgress * 4 * Math.PI; // PI to 2PI
+                    orbitAngle = Math.PI + hourProgress * 4 * Math.PI;
                 }
-                
-                // Hyperbolic-like path
                 const a = 150;
                 const e = 0.99;
                 const r = a * (1 - e * e) / (1 + e * Math.cos(orbitAngle));
-                
-                // Position it in 3D space (inclined orbit)
                 const x = Math.cos(orbitAngle) * r;
                 const z = Math.sin(orbitAngle) * r;
                 const y = Math.sin(orbitAngle * 1.5) * 25; 
-                
                 atlasGroup.position.set(x, y, z);
-                
-                // Make the core look at the sun so the tail can point straight back
                 atlasGroup.lookAt(0, 0, 0);
-                
-                // Spin the core
                 atlasCore.rotation.y += 0.02 * speedMult;
                 atlasCore.rotation.z += 0.01 * speedMult;
-                
-                // Dynamically scale the tail length based on distance from sun (longer near sun)
                 const tailLength = Math.max(2, 400 / (r + 1));
                 atlasTail.scale.set(1, tailLength / 5.0, 1);
-                
             } else {
                 atlasGroup.visible = false;
             }
@@ -1871,10 +1845,11 @@
                 }
             }
 
+            // Reduced Comet Frequency
             travelCometTimer -= 1;
             if (travelCometTimer <= 0 && travelComets.length < 4) {
                 spawnTravelComet();
-                travelCometTimer = 200 + Math.floor(Math.random() * 100);
+                travelCometTimer = 4000 + Math.floor(Math.random() * 3000);
             }
             for (let i = travelComets.length - 1; i >= 0; i--) {
                 const c = travelComets[i];
@@ -1890,6 +1865,25 @@
                 m.grp.rotation.x += m.rotSpd.x;
                 m.grp.rotation.y += m.rotSpd.y;
                 m.grp.rotation.z += m.rotSpd.z;
+            }
+
+            // Shooting Stars
+            shootingStarTimer -= 1;
+            if (shootingStarTimer <= 0 && shootingStars.length < 2) {
+                spawnShootingStar();
+                shootingStarTimer = 500 + Math.floor(Math.random() * 1500);
+            }
+            for (let i = shootingStars.length - 1; i >= 0; i--) {
+                const ss = shootingStars[i];
+                ss.mesh.position.addScaledVector(ss.dir, ss.speed);
+                ss.life -= 0.02;
+                ss.mesh.material.opacity = Math.max(0, ss.life);
+                if (ss.life <= 0) {
+                    scene.remove(ss.mesh);
+                    ss.mesh.geometry.dispose();
+                    ss.mesh.material.dispose();
+                    shootingStars.splice(i, 1);
+                }
             }
 
             if (currentTargetPlanetIndex === -1) {
