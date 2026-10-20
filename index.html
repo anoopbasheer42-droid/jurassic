@@ -581,13 +581,33 @@
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.18);
         scene.add(ambientLight);
 
-        const glowSphere = new THREE.Mesh(new THREE.SphereGeometry(1.15, 48, 48), new THREE.MeshBasicMaterial({ color: 0x8b5cf6, transparent: true, opacity: 0.10 }));
-        const innerBright = new THREE.Mesh(new THREE.SphereGeometry(0.55, 32, 32), new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0.35 }));
-        const innerCore = new THREE.Mesh(new THREE.IcosahedronGeometry(1.0, 1), new THREE.MeshBasicMaterial({ color: 0xa78bfa, wireframe: true, transparent: true, opacity: 0.75 }));
-        const midShell = new THREE.Mesh(new THREE.IcosahedronGeometry(1.6, 1), new THREE.MeshBasicMaterial({ color: 0x8b5cf6, wireframe: true, transparent: true, opacity: 0.4 }));
-        const outerShell = new THREE.Mesh(new THREE.IcosahedronGeometry(2.2, 1), new THREE.MeshBasicMaterial({ color: 0x7c3aed, wireframe: true, transparent: true, opacity: 0.2 }));
+        // === DUAL NUCLEAR CORES ===
+        function makeCoreCluster() {
+            const glowSphere = new THREE.Mesh(new THREE.SphereGeometry(1.15, 48, 48), new THREE.MeshBasicMaterial({ color: 0x8b5cf6, transparent: true, opacity: 0.10 }));
+            const innerBright = new THREE.Mesh(new THREE.SphereGeometry(0.55, 32, 32), new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0.35 }));
+            const innerCore = new THREE.Mesh(new THREE.IcosahedronGeometry(1.0, 1), new THREE.MeshBasicMaterial({ color: 0xa78bfa, wireframe: true, transparent: true, opacity: 0.75 }));
+            const midShell = new THREE.Mesh(new THREE.IcosahedronGeometry(1.6, 1), new THREE.MeshBasicMaterial({ color: 0x8b5cf6, wireframe: true, transparent: true, opacity: 0.4 }));
+            const outerShell = new THREE.Mesh(new THREE.IcosahedronGeometry(2.2, 1), new THREE.MeshBasicMaterial({ color: 0x7c3aed, wireframe: true, transparent: true, opacity: 0.2 }));
+            const grp = new THREE.Group();
+            grp.add(glowSphere, innerBright, innerCore, midShell, outerShell);
+            return { group: grp, glowSphere, innerBright, innerCore, midShell, outerShell };
+        }
+
+        const CORE_SCALE = 0.65;
+        const CORE_OFFSET = 1.2;
+
+        const coreA = makeCoreCluster();
+        const coreB = makeCoreCluster();
+        coreA.group.position.set(-CORE_OFFSET, 0, 0);
+        coreB.group.position.set(CORE_OFFSET, 0, 0);
+        coreA.group.scale.setScalar(CORE_SCALE);
+        coreB.group.scale.setScalar(CORE_SCALE);
+        coreA.group.rotation.z = 0.18;
+        coreB.group.rotation.z = -0.18;
+        const coreClusters = [coreA, coreB];
+
         const coreGroup = new THREE.Group();
-        coreGroup.add(glowSphere, innerBright, innerCore, midShell, outerShell);
+        coreGroup.add(coreA.group, coreB.group);
         scene.add(coreGroup);
 
         function makeCircularStarTexture(colorHex) {
@@ -1575,14 +1595,61 @@
             }
 
             if (isCharging) { const elapsed = Date.now() - chargeStartTime; chargeLevel = Math.min(1, elapsed / CHARGE_FULL_MS); updateChargeSound(chargeLevel); }
-            const spin = 1 + chargeLevel * 15 + touchBoost * 0.5; pulseTime += 0.04 * spin; touchBoost *= 0.94; const chargeScale = 1 + chargeLevel * 1.1; const brightScale = (1 + Math.sin(pulseTime * 1.5) * 0.15 + touchBoost * 0.25) * chargeScale; innerBright.scale.set(brightScale, brightScale, brightScale); innerBright.material.opacity = 0.3 + Math.sin(pulseTime * 1.5) * 0.1 + touchBoost * 0.2 + chargeLevel * 0.6; innerCore.rotation.x += 0.008 * spin; innerCore.rotation.y += 0.012 * spin; midShell.rotation.x -= 0.004 * spin; midShell.rotation.y -= 0.006 * spin; outerShell.rotation.x += 0.002 * spin; outerShell.rotation.y -= 0.003 * spin; coreGroup.rotation.y += coreRotVelY; coreGroup.rotation.x += coreRotVelX; coreRotVelY *= 0.92; coreRotVelX *= 0.92; const scaleForce = (1 - coreScale) * 0.15; coreScaleVel += scaleForce; coreScaleVel *= 0.85; coreScale += coreScaleVel; const _coreSpaceScale = coreScale * (1 - ep * 0.85); coreGroup.scale.set(_coreSpaceScale, _coreSpaceScale, _coreSpaceScale); coreGroup.visible = (spaceState === 'core' || spaceState === 'collapsing') && spaceProgress < 0.98; const rumble = touchBoost * 0.08 + chargeLevel * 0.35; if (rumble > 0.01) { coreGroup.position.x = (Math.random() - 0.5) * rumble; coreGroup.position.y = (Math.random() - 0.5) * rumble; } else { coreGroup.position.x *= 0.9; coreGroup.position.y *= 0.9; } glowSphere.material.opacity = 0.08 + Math.sin(pulseTime * 0.6) * 0.04 + touchBoost * 0.15 + chargeLevel * 0.6; if (chargeLevel > 0.01) { const c = new THREE.Color(); if (chargeLevel < 0.5) c.lerpColors(new THREE.Color(0x8b5cf6), new THREE.Color(0xf59e0b), chargeLevel / 0.5); else c.lerpColors(new THREE.Color(0xf59e0b), new THREE.Color(0xef4444), (chargeLevel - 0.5) / 0.5); glowSphere.material.color.copy(c); innerBright.material.color.copy(c); innerCore.material.color.copy(c); midShell.material.color.copy(c); outerShell.material.color.copy(c); } if (isCharging && chargeLevel > 0.08) { boltTimer -= 1; const boltInterval = Math.max(1, Math.floor(14 - chargeLevel * 13)); if (boltTimer <= 0) { spawnBolt(); if (chargeLevel > 0.3 && Math.random() < 0.6) spawnBolt(); if (chargeLevel > 0.6 && Math.random() < 0.7) spawnBolt(); if (chargeLevel > 0.85 && Math.random() < 0.8) spawnBolt(); boltTimer = boltInterval; } } for (const b of boltPool) { if (b.life > 0) { b.life -= 0.12 + chargeLevel * 0.08; b.line.material.opacity = Math.max(0, b.life * 1.2); if (b.life <= 0) { b.line.visible = false; b.line.material.opacity = 0; } } } for (let i = ripples.length - 1; i >= 0; i--) { const r = ripples[i]; r.life -= 0.03; r.mesh.scale.setScalar(1 + (1 - r.life) * 4); r.mesh.material.opacity = r.life * 0.8; if (r.life <= 0) { scene.remove(r.mesh); r.mesh.geometry.dispose(); r.mesh.material.dispose(); ripples.splice(i, 1); } } 
+            const spin = 1 + chargeLevel * 15 + touchBoost * 0.5; pulseTime += 0.04 * spin; touchBoost *= 0.94; const chargeScale = 1 + chargeLevel * 1.1; const brightScale = (1 + Math.sin(pulseTime * 1.5) * 0.15 + touchBoost * 0.25) * chargeScale; 
+            
+            // Dual-core per-cluster animation (A spins clockwise, B spins counter-clockwise)
+            for (let ci = 0; ci < coreClusters.length; ci++) {
+                const cl = coreClusters[ci];
+                const dirMul = ci === 0 ? 1 : -1;
+                cl.innerBright.scale.set(brightScale, brightScale, brightScale);
+                cl.innerBright.material.opacity = 0.3 + Math.sin(pulseTime * 1.5) * 0.1 + touchBoost * 0.2 + chargeLevel * 0.6;
+                cl.innerCore.rotation.x += 0.008 * spin * dirMul;
+                cl.innerCore.rotation.y += 0.012 * spin * dirMul;
+                cl.midShell.rotation.x -= 0.004 * spin * dirMul;
+                cl.midShell.rotation.y -= 0.006 * spin * dirMul;
+                cl.outerShell.rotation.x += 0.002 * spin * dirMul;
+                cl.outerShell.rotation.y -= 0.003 * spin * dirMul;
+            }
+            
+            coreGroup.rotation.y += coreRotVelY; coreGroup.rotation.x += coreRotVelX; coreRotVelY *= 0.92; coreRotVelX *= 0.92; const scaleForce = (1 - coreScale) * 0.15; coreScaleVel += scaleForce; coreScaleVel *= 0.85; coreScale += coreScaleVel; const _coreSpaceScale = coreScale * (1 - ep * 0.85); coreGroup.scale.set(_coreSpaceScale, _coreSpaceScale, _coreSpaceScale); coreGroup.visible = (spaceState === 'core' || spaceState === 'collapsing') && spaceProgress < 0.98; const rumble = touchBoost * 0.08 + chargeLevel * 0.35; if (rumble > 0.01) { coreGroup.position.x = (Math.random() - 0.5) * rumble; coreGroup.position.y = (Math.random() - 0.5) * rumble; } else { coreGroup.position.x *= 0.9; coreGroup.position.y *= 0.9; } 
+            
+            const _glowOp = 0.08 + Math.sin(pulseTime * 0.6) * 0.04 + touchBoost * 0.15 + chargeLevel * 0.6;
+            for (const cl of coreClusters) cl.glowSphere.material.opacity = _glowOp;
+            
+            if (chargeLevel > 0.01) { 
+                const c = new THREE.Color(); 
+                if (chargeLevel < 0.5) c.lerpColors(new THREE.Color(0x8b5cf6), new THREE.Color(0xf59e0b), chargeLevel / 0.5); 
+                else c.lerpColors(new THREE.Color(0xf59e0b), new THREE.Color(0xef4444), (chargeLevel - 0.5) / 0.5); 
+                for (const cl of coreClusters) {
+                    cl.glowSphere.material.color.copy(c); 
+                    cl.innerBright.material.color.copy(c); 
+                    cl.innerCore.material.color.copy(c); 
+                    cl.midShell.material.color.copy(c); 
+                    cl.outerShell.material.color.copy(c);
+                }
+            } 
+            
+            if (isCharging && chargeLevel > 0.08) { boltTimer -= 1; const boltInterval = Math.max(1, Math.floor(14 - chargeLevel * 13)); if (boltTimer <= 0) { spawnBolt(); if (chargeLevel > 0.3 && Math.random() < 0.6) spawnBolt(); if (chargeLevel > 0.6 && Math.random() < 0.7) spawnBolt(); if (chargeLevel > 0.85 && Math.random() < 0.8) spawnBolt(); boltTimer = boltInterval; } } for (const b of boltPool) { if (b.life > 0) { b.life -= 0.12 + chargeLevel * 0.08; b.line.material.opacity = Math.max(0, b.life * 1.2); if (b.life <= 0) { b.line.visible = false; b.line.material.opacity = 0; } } } for (let i = ripples.length - 1; i >= 0; i--) { const r = ripples[i]; r.life -= 0.03; r.mesh.scale.setScalar(1 + (1 - r.life) * 4); r.mesh.material.opacity = r.life * 0.8; if (r.life <= 0) { scene.remove(r.mesh); r.mesh.geometry.dispose(); r.mesh.material.dispose(); ripples.splice(i, 1); } } 
             updateCosmicBirth();
             renderer.render(scene, camera);
         }
         animate();
         window.addEventListener('resize', () => { camera.aspect = container.clientWidth / container.clientHeight; camera.updateProjectionMatrix(); renderer.setSize(container.clientWidth, container.clientHeight); });
 
-        function updateCoreColor(signal) { if (isCharging) return; let color = 0x8b5cf6; if (signal === 'BUY') color = 0x10b981; else if (signal === 'SELL') color = 0xef4444; else if (signal === 'SETUP') color = 0xf59e0b; glowSphere.material.color.setHex(color); innerBright.material.color.setHex(color); innerCore.material.color.setHex(color); midShell.material.color.setHex(color); outerShell.material.color.setHex(color); }
+        function updateCoreColor(signal) { 
+            if (isCharging) return; 
+            let color = 0x8b5cf6; 
+            if (signal === 'BUY') color = 0x10b981; 
+            else if (signal === 'SELL') color = 0xef4444; 
+            else if (signal === 'SETUP') color = 0xf59e0b; 
+            for (const cl of coreClusters) {
+                cl.glowSphere.material.color.setHex(color); 
+                cl.innerBright.material.color.setHex(color); 
+                cl.innerCore.material.color.setHex(color); 
+                cl.midShell.material.color.setHex(color); 
+                cl.outerShell.material.color.setHex(color);
+            }
+        }
 
         function safeNum(val, fallback = 0) { return (isNaN(val) || val === undefined || val === null || !isFinite(val)) ? fallback : val; }
         async function fetchBiquoteCandles(interval, limit) { try { const url = `https://biquote.io/api/EURUSD/ohlc?interval=${interval}&limit=${limit}`; const res = await fetch(url); if (!res.ok) return []; const data = await res.json(); if (!data.bars || data.bars.length === 0) return []; return data.bars.filter(b => !b.isOpen).reverse().map(b => ({ time: new Date(b.openTime).getTime(), open: parseFloat(b.open), high: parseFloat(b.high), low: parseFloat(b.low), close: parseFloat(b.close) })); } catch(e) { console.error("Biquote fetch error:", e); return []; } }
