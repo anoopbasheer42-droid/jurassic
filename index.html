@@ -1032,14 +1032,9 @@
                 grp.add(ring2);
             }
 
-            // === FAINT ORBIT LINE ===
-            const pts = [];
-            for (let i = 0; i <= 160; i++) { const a = (i / 160) * Math.PI * 2; pts.push(new THREE.Vector3(Math.cos(a) * p.o, 0, Math.sin(a) * p.o)); }
-            const og = new THREE.BufferGeometry().setFromPoints(pts);
-            const om = new THREE.LineBasicMaterial({ color: 0x6e7f95, transparent: true, opacity: 0.02 }); // Extremely faint
-            solarSystemGroup.add(new THREE.Line(og, om));
+            // === ORBIT LINES REMOVED COMPLETELY ===
+            // (User requested lines to be invisible, we removed them here)
 
-            // === REALISTIC MOONS ===
             const moons = [];
             if (p.moons) {
                 for (const m of p.moons) {
@@ -1065,15 +1060,6 @@
                     moonMesh.position.x = m.o;
                     moonMesh.userData.isMoon = true;
                     moonGrp.add(moonMesh);
-
-                    const mPts = [];
-                    for (let i = 0; i <= 64; i++) {
-                        const a = (i / 64) * Math.PI * 2;
-                        mPts.push(new THREE.Vector3(Math.cos(a) * m.o, 0, Math.sin(a) * m.o));
-                    }
-                    const mOrbitGeo = new THREE.BufferGeometry().setFromPoints(mPts);
-                    const mOrbitMat = new THREE.LineBasicMaterial({ color: 0x556677, transparent: true, opacity: 0.01 }); // Extremely faint
-                    moonGrp.add(new THREE.Line(mOrbitGeo, mOrbitMat));
 
                     if (m.incl !== undefined) moonGrp.rotation.x = m.incl;
                     grp.add(moonGrp);
@@ -1200,6 +1186,10 @@
         if (earthObj) {
             earthObj.add(issGroup);
             
+            // Position ISS OUTSIDE Earth (Earth radius is 0.36, so we put ISS at 0.5)
+            issGroup.position.set(0.5, 0.05, 0);
+            issGroup.scale.set(2, 2, 2); // Make it larger so it's visible
+
             const matWhite = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 });
             const matMetal = new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 0.8, roughness: 0.4 });
             const matSolar = new THREE.MeshStandardMaterial({ color: 0x0a1c3a, metalness: 0.8, roughness: 0.3, side: THREE.DoubleSide });
@@ -1785,6 +1775,16 @@
 
             // ISS & Astronauts animation
             if (issGroup) {
+                // Orbit ISS around Earth
+                const issOrbitSpeed = 0.8 * speedMult;
+                const issAngle = ts * issOrbitSpeed;
+                // 0.5 is the orbit radius relative to Earth's center
+                issGroup.position.x = Math.cos(issAngle) * 0.55;
+                issGroup.position.z = Math.sin(issAngle) * 0.55;
+                issGroup.position.y = Math.sin(issAngle) * 0.1; 
+                issGroup.rotation.y = -issAngle + Math.PI/2;
+
+                // Solar panel rotation
                 issGroup.children.forEach(child => {
                     if (child.children.length === 2 && child.children[0].material && child.children[0].material.color.getHex() === 0x0a1c3a) {
                         child.rotation.y += 0.001 * speedMult;
