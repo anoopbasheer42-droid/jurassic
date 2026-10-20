@@ -161,7 +161,7 @@
         <div class="card">
             <div class="card-title">Neural Core</div>
             <div id="canvas-container"></div>
-            <div class="subtitle">Cosmic Explorer · Pinch to Zoom</div>
+            <div class="subtitle">Cosmic Explorer · Pinch to Zoom · Drag Cores to Separate</div>
         </div>
         <div class="card signal-card">
             <div class="card-title">Current Signal</div>
@@ -581,7 +581,7 @@
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.18);
         scene.add(ambientLight);
 
-        // === DUAL NUCLEAR CORES ===
+        // === DUAL NUCLEAR CORES (SEPARABLE) ===
         function makeCoreCluster() {
             const glowSphere = new THREE.Mesh(new THREE.SphereGeometry(1.15, 48, 48), new THREE.MeshBasicMaterial({ color: 0x8b5cf6, transparent: true, opacity: 0.10 }));
             const innerBright = new THREE.Mesh(new THREE.SphereGeometry(0.55, 32, 32), new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0.35 }));
@@ -590,7 +590,11 @@
             const outerShell = new THREE.Mesh(new THREE.IcosahedronGeometry(2.2, 1), new THREE.MeshBasicMaterial({ color: 0x7c3aed, wireframe: true, transparent: true, opacity: 0.2 }));
             const grp = new THREE.Group();
             grp.add(glowSphere, innerBright, innerCore, midShell, outerShell);
-            return { group: grp, glowSphere, innerBright, innerCore, midShell, outerShell };
+            // Invisible hitbox for individual grabbing
+            const hitboxMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+            const hitbox = new THREE.Mesh(new THREE.SphereGeometry(1.7, 12, 12), hitboxMat);
+            grp.add(hitbox);
+            return { group: grp, glowSphere, innerBright, innerCore, midShell, outerShell, hitbox };
         }
 
         const CORE_SCALE = 0.65;
@@ -598,17 +602,26 @@
 
         const coreA = makeCoreCluster();
         const coreB = makeCoreCluster();
-        coreA.group.position.set(-CORE_OFFSET, 0, 0);
-        coreB.group.position.set(CORE_OFFSET, 0, 0);
+
+        // Base (stuck) positions
+        coreA.basePosition = new THREE.Vector3(-CORE_OFFSET, 0, 0);
+        coreB.basePosition = new THREE.Vector3(CORE_OFFSET, 0, 0);
+        coreA.group.position.copy(coreA.basePosition);
+        coreB.group.position.copy(coreB.basePosition);
         coreA.group.scale.setScalar(CORE_SCALE);
         coreB.group.scale.setScalar(CORE_SCALE);
         coreA.group.rotation.z = 0.18;
         coreB.group.rotation.z = -0.18;
+        coreA.isReturning = false;
+        coreB.isReturning = false;
+
         const coreClusters = [coreA, coreB];
 
         const coreGroup = new THREE.Group();
         coreGroup.add(coreA.group, coreB.group);
         scene.add(coreGroup);
+
+        let draggingCoreIndex = -1;
 
         function makeCircularStarTexture(colorHex) {
             const canvas = document.createElement('canvas');
@@ -1312,6 +1325,24 @@
 
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
+
+        // Raycast to detect which individual core (if any) is under the pointer
+        function raycastCoreHit(e) {
+            if (spaceState !== 'core') return -1;
+            const rect = renderer.domElement.getBoundingClientRect();
+            pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(pointer, camera);
+            const hitA = raycaster.intersectObject(coreA.hitbox, false);
+            const hitB = raycaster.intersectObject(coreB.hitbox, false);
+            if (hitA.length > 0 && hitB.length > 0) {
+                return hitA[0].distance <= hitB[0].distance ? 0 : 1;
+            }
+            if (hitA.length > 0) return 0;
+            if (hitB.length > 0) return 1;
+            return -1;
+        }
+
         function checkEarthTap(e) {
             if (!earthObj) return false;
             const rect = renderer.domElement.getBoundingClientRect();
@@ -1374,6 +1405,17 @@
                 isDragging = true; 
                 pointerVelocity = { x: 0, y: 0 }; 
                 isOnCenter = isPointerOnCenter(e); 
+
+                // NEW: Detect which core (if any) is under the pointer for separation
+                draggingCoreIndex = -1;
+                if (spaceState === 'core') {
+                    const hit = raycastCoreHit(e);
+                    if (hit >= 0) {
+                        draggingCoreIndex = hit;
+                        coreClusters[hit].isReturning = false;
+                    }
+                }
+
                 if (isOnCenter && spaceState === 'core') { 
                     longPressTimer = setTimeout(() => { 
                         if (isDragging && activePointers.size === 1 && isOnCenter) { 
@@ -1382,6 +1424,11 @@
                             chargeStartTime = Date.now(); 
                             startChargeSound(); 
                             if (navigator.vibrate) navigator.vibrate(20); 
+                            // Cancel core drag when charging starts
+                            if (draggingCoreIndex >= 0) {
+                                coreClusters[draggingCoreIndex].isReturning = true;
+                                draggingCoreIndex = -1;
+                            }
                         } 
                     }, CHARGE_START_MS); 
                 } 
@@ -1394,20 +1441,143 @@
                 longPressActive = false; 
                 chargeLevel = 0; 
                 fadeOutChargeSound(0.2); 
+                // Cancel any core drag when second finger goes down
+                if (draggingCoreIndex >= 0) {
+                    coreClusters[draggingCoreIndex].isReturning = true;
+                    draggingCoreIndex = -1;
+                }
             } 
         });
 
-        container.addEventListener('pointermove', (e) => { if (landingState !== 'none') return; if (!activePointers.has(e.pointerId)) return; resetIdleTimer(); const prev = activePointers.get(e.pointerId); activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (activePointers.size === 1 && isDragging) { const dx = e.clientX - prev.x; const dy = e.clientY - prev.y; if (spaceState === 'space' || spaceState === 'expanding' || spaceState === 'iss_view') { cameraTheta -= dx * 0.008; cameraPhi = Math.max(-1.5, Math.min(1.5, cameraPhi + dy * 0.008)); } else { coreRotVelY += dx * 0.0009; coreRotVelX += dy * 0.0009; } pointerVelocity.x = dx; pointerVelocity.y = dy; if (Math.abs(dx) + Math.abs(dy) > 5 && !longPressActive) clearTimeout(longPressTimer); if (longPressActive && isCharging && !isPointerOnCenter(e)) { isCharging = false; longPressActive = false; fadeOutChargeSound(0.4); } } else if (activePointers.size === 2) { const pts = Array.from(activePointers.values()); const dist = getDistance(pts[0], pts[1]); if (pinchStartDist > 0) { const ratio = dist / pinchStartDist; if (spaceState === 'space' || spaceState === 'expanding' || spaceState === 'iss_view') { cameraRadius = Math.max(1.2, Math.min(3000, cameraRadius / ratio)); targetCameraZ = cameraRadius; } else { coreScale = Math.max(0.6, Math.min(2.2, pinchStartScale * ratio)); } } } });
+        container.addEventListener('pointermove', (e) => { 
+            if (landingState !== 'none') return; 
+            if (!activePointers.has(e.pointerId)) return; 
+            resetIdleTimer(); 
+            const prev = activePointers.get(e.pointerId); 
+            activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); 
+            
+            if (activePointers.size === 1 && isDragging) { 
+                const dx = e.clientX - prev.x; 
+                const dy = e.clientY - prev.y; 
+                
+                // NEW: Separation mode - if a core was grabbed and we're not charging
+                if (draggingCoreIndex >= 0 && !longPressActive && !isCharging) {
+                    const core = coreClusters[draggingCoreIndex];
+                    const rect = renderer.domElement.getBoundingClientRect();
+                    // World units per pixel at z=0 (camera at z=6, FOV 45)
+                    const worldHeight = 2 * Math.abs(camera.position.z) * Math.tan(camera.fov * Math.PI / 360);
+                    const worldPerPixel = worldHeight / rect.height;
+                    // Screen delta → world delta
+                    const worldDelta = new THREE.Vector3(dx * worldPerPixel, -dy * worldPerPixel, 0);
+                    // World delta → coreGroup local delta (undo group rotation)
+                    const invQuat = coreGroup.quaternion.clone().invert();
+                    const localDelta = worldDelta.clone().applyQuaternion(invQuat);
+                    // Undo group scale
+                    const gScale = coreGroup.scale.x || 1;
+                    localDelta.divideScalar(gScale);
+                    // Apply to position
+                    core.group.position.x += localDelta.x;
+                    core.group.position.y += localDelta.y;
+                    core.group.position.z += localDelta.z;
+                    // Clamp max separation distance
+                    const maxDist = 5;
+                    const toBase = new THREE.Vector3().subVectors(core.group.position, core.basePosition);
+                    if (toBase.length() > maxDist) {
+                        toBase.setLength(maxDist);
+                        core.group.position.copy(core.basePosition).add(toBase);
+                    }
+                } else if (spaceState === 'space' || spaceState === 'expanding' || spaceState === 'iss_view') { 
+                    cameraTheta -= dx * 0.008; 
+                    cameraPhi = Math.max(-1.5, Math.min(1.5, cameraPhi + dy * 0.008)); 
+                } else { 
+                    coreRotVelY += dx * 0.0009; 
+                    coreRotVelX += dy * 0.0009; 
+                } 
+                pointerVelocity.x = dx; 
+                pointerVelocity.y = dy; 
+                if (Math.abs(dx) + Math.abs(dy) > 5 && !longPressActive) clearTimeout(longPressTimer); 
+                if (longPressActive && isCharging && !isPointerOnCenter(e)) { 
+                    isCharging = false; 
+                    longPressActive = false; 
+                    fadeOutChargeSound(0.4); 
+                } 
+            } else if (activePointers.size === 2) { 
+                const pts = Array.from(activePointers.values()); 
+                const dist = getDistance(pts[0], pts[1]); 
+                if (pinchStartDist > 0) { 
+                    const ratio = dist / pinchStartDist; 
+                    if (spaceState === 'space' || spaceState === 'expanding' || spaceState === 'iss_view') { 
+                        cameraRadius = Math.max(1.2, Math.min(3000, cameraRadius / ratio)); 
+                        targetCameraZ = cameraRadius; 
+                    } else { 
+                        coreScale = Math.max(0.6, Math.min(2.2, pinchStartScale * ratio)); 
+                    } 
+                } 
+            } 
+        });
 
-        function endPointer(e) { if (landingState !== 'none') return; activePointers.delete(e.pointerId); if (activePointers.size === 0) { isDragging = false; container.classList.remove('touched'); clearTimeout(longPressTimer); const speed = Math.sqrt(pointerVelocity.x**2 + pointerVelocity.y**2); 
-        
-            if (!longPressActive && speed < 3 && checkEarthTap(e)) {
-                return;
+        function endPointer(e) { 
+            if (landingState !== 'none') return; 
+            activePointers.delete(e.pointerId); 
+            
+            // NEW: End individual core drag → start return animation
+            const wasDraggingCore = draggingCoreIndex >= 0;
+            if (draggingCoreIndex >= 0) {
+                coreClusters[draggingCoreIndex].isReturning = true;
+                draggingCoreIndex = -1;
             }
+            
+            if (activePointers.size === 0) { 
+                isDragging = false; 
+                container.classList.remove('touched'); 
+                clearTimeout(longPressTimer); 
+                const speed = Math.sqrt(pointerVelocity.x**2 + pointerVelocity.y**2); 
+                
+                if (!longPressActive && !wasDraggingCore && speed < 3 && checkEarthTap(e)) {
+                    return;
+                }
 
-            if (longPressActive && chargeLevel >= 0.95) { stopChargeSound(); playExplosionSound(); spawnExplosion(); spawnCosmicBirth(); touchBoost = 4.0; coreScaleVel += 0.9; coreRotVelY += 1.2; coreRotVelX -= 0.8; if (navigator.vibrate) navigator.vibrate([80, 40, 100, 40, 150, 40, 200]); setTimeout(() => { triggerSpaceExpand(); }, 900); } else if (longPressActive && chargeLevel > 0.3) { fadeOutChargeSound(0.5); touchBoost = 0.8; spawnRipple(0xf59e0b); coreScaleVel += 0.2; if (navigator.vibrate) navigator.vibrate(15); } else if (!longPressActive && speed < 3) { stopChargeSound(); touchBoost = 1.0; coreScaleVel += 0.15; spawnRipple(); if (navigator.vibrate) navigator.vibrate(15); } else { fadeOutChargeSound(0.3); } longPressActive = false; isCharging = false; isOnCenter = false; chargeLevel = 0; pointerVelocity = { x: 0, y: 0 }; } else if (activePointers.size === 1) { pinchStartDist = 0; } }
+                if (longPressActive && chargeLevel >= 0.95) { 
+                    stopChargeSound(); 
+                    playExplosionSound(); 
+                    spawnExplosion(); 
+                    spawnCosmicBirth(); 
+                    touchBoost = 4.0; 
+                    coreScaleVel += 0.9; 
+                    coreRotVelY += 1.2; 
+                    coreRotVelX -= 0.8; 
+                    if (navigator.vibrate) navigator.vibrate([80, 40, 100, 40, 150, 40, 200]); 
+                    setTimeout(() => { triggerSpaceExpand(); }, 900); 
+                } else if (longPressActive && chargeLevel > 0.3) { 
+                    fadeOutChargeSound(0.5); 
+                    touchBoost = 0.8; 
+                    spawnRipple(0xf59e0b); 
+                    coreScaleVel += 0.2; 
+                    if (navigator.vibrate) navigator.vibrate(15); 
+                } else if (!longPressActive && !wasDraggingCore && speed < 3) { 
+                    stopChargeSound(); 
+                    touchBoost = 1.0; 
+                    coreScaleVel += 0.15; 
+                    spawnRipple(); 
+                    if (navigator.vibrate) navigator.vibrate(15); 
+                } else if (!wasDraggingCore) { 
+                    fadeOutChargeSound(0.3); 
+                } 
+                
+                longPressActive = false; 
+                isCharging = false; 
+                isOnCenter = false; 
+                chargeLevel = 0; 
+                pointerVelocity = { x: 0, y: 0 }; 
+            } else if (activePointers.size === 1) { 
+                pinchStartDist = 0; 
+            } 
+        }
 
-        container.addEventListener('pointerup', endPointer); container.addEventListener('pointercancel', endPointer); container.addEventListener('touchstart', (e) => { if (landingState !== 'none') return; e.preventDefault(); }, { passive: false }); container.addEventListener('touchmove', (e) => { if (landingState !== 'none') return; e.preventDefault(); }, { passive: false });
+        container.addEventListener('pointerup', endPointer); 
+        container.addEventListener('pointercancel', endPointer); 
+        container.addEventListener('touchstart', (e) => { if (landingState !== 'none') return; e.preventDefault(); }, { passive: false }); 
+        container.addEventListener('touchmove', (e) => { if (landingState !== 'none') return; e.preventDefault(); }, { passive: false });
 
         const _earthWorld = new THREE.Vector3(0, 0, 0); const _lookTarget = new THREE.Vector3(0, 0, 0);
         function animate() {
@@ -1597,7 +1767,7 @@
             if (isCharging) { const elapsed = Date.now() - chargeStartTime; chargeLevel = Math.min(1, elapsed / CHARGE_FULL_MS); updateChargeSound(chargeLevel); }
             const spin = 1 + chargeLevel * 15 + touchBoost * 0.5; pulseTime += 0.04 * spin; touchBoost *= 0.94; const chargeScale = 1 + chargeLevel * 1.1; const brightScale = (1 + Math.sin(pulseTime * 1.5) * 0.15 + touchBoost * 0.25) * chargeScale; 
             
-            // Dual-core per-cluster animation (A spins clockwise, B spins counter-clockwise)
+            // Dual-core per-cluster animation (A spins clockwise, B spins counter-clockwise - opposite directions)
             for (let ci = 0; ci < coreClusters.length; ci++) {
                 const cl = coreClusters[ci];
                 const dirMul = ci === 0 ? 1 : -1;
@@ -1609,6 +1779,17 @@
                 cl.midShell.rotation.y -= 0.006 * spin * dirMul;
                 cl.outerShell.rotation.x += 0.002 * spin * dirMul;
                 cl.outerShell.rotation.y -= 0.003 * spin * dirMul;
+            }
+
+            // NEW: Smoothly return separated cores back to their stuck positions
+            for (const core of coreClusters) {
+                if (core.isReturning) {
+                    core.group.position.lerp(core.basePosition, 0.04);
+                    if (core.group.position.distanceTo(core.basePosition) < 0.005) {
+                        core.group.position.copy(core.basePosition);
+                        core.isReturning = false;
+                    }
+                }
             }
             
             coreGroup.rotation.y += coreRotVelY; coreGroup.rotation.x += coreRotVelX; coreRotVelY *= 0.92; coreRotVelX *= 0.92; const scaleForce = (1 - coreScale) * 0.15; coreScaleVel += scaleForce; coreScaleVel *= 0.85; coreScale += coreScaleVel; const _coreSpaceScale = coreScale * (1 - ep * 0.85); coreGroup.scale.set(_coreSpaceScale, _coreSpaceScale, _coreSpaceScale); coreGroup.visible = (spaceState === 'core' || spaceState === 'collapsing') && spaceProgress < 0.98; const rumble = touchBoost * 0.08 + chargeLevel * 0.35; if (rumble > 0.01) { coreGroup.position.x = (Math.random() - 0.5) * rumble; coreGroup.position.y = (Math.random() - 0.5) * rumble; } else { coreGroup.position.x *= 0.9; coreGroup.position.y *= 0.9; } 
