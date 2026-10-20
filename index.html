@@ -656,13 +656,11 @@
             return new THREE.CanvasTexture(c);
         }
 
-        // NEW: Realistic cratered moon texture in real per-moon color
         function makeMoonTex(baseColor, craterRgb) {
             const c = _canvas(512, 256);
             const ctx = c.getContext('2d');
             ctx.fillStyle = baseColor;
             ctx.fillRect(0, 0, 512, 256);
-            // Large maria (dark patches)
             for (let i = 0; i < 6; i++) {
                 const x = Math.random() * 512, y = Math.random() * 256;
                 const r = 25 + Math.random() * 55;
@@ -673,7 +671,6 @@
                 ctx.fillStyle = g;
                 ctx.fillRect(0, 0, 512, 256);
             }
-            // Craters with bright rims
             for (let i = 0; i < 260; i++) {
                 const x = Math.random() * 512, y = Math.random() * 256;
                 const r = 1 + Math.random() * 8;
@@ -743,7 +740,6 @@
 
         const travelComets = [];
 
-        // NEW: Realistic comet tail texture (ion = blue straight; dust = warm curving)
         function makeCometTailTexLocal(rgb, ionized) {
             const w = 512, h = 128;
             const c = _canvas(w, h);
@@ -786,7 +782,6 @@
         }
         const cometHeadTex = makeCometHeadTexLocal();
 
-        // NEW: Two-tail realistic comet spawner
         function spawnTravelComet() {
             const cg = new THREE.Group();
             const nSize = 0.05 + Math.random() * 0.08;
@@ -903,7 +898,6 @@
 
         solarSystemGroup.add(sunGroup);
 
-        // === PLANET DATA — now with realistic moons per planet ===
         const PLANET_DATA = [
             { name:'Mercury', r:0.20, o:6,   fb:['#8a7f75', '100,90,80'],   spd:0.42, rotSpd:0.005, roughness:0.95, metalness:0.05,
               atmo:{ color: 0xbbaabb, inner: 0.08, outer: 0.04 } },
@@ -1038,11 +1032,11 @@
                 grp.add(ring2);
             }
 
-            // === LIGHT FAINT PLANET ORBIT LINE ===
+            // === FAINT ORBIT LINE ===
             const pts = [];
             for (let i = 0; i <= 160; i++) { const a = (i / 160) * Math.PI * 2; pts.push(new THREE.Vector3(Math.cos(a) * p.o, 0, Math.sin(a) * p.o)); }
             const og = new THREE.BufferGeometry().setFromPoints(pts);
-            const om = new THREE.LineBasicMaterial({ color: 0x7a8fa8, transparent: true, opacity: 0.07 });
+            const om = new THREE.LineBasicMaterial({ color: 0x6e7f95, transparent: true, opacity: 0.08 });
             solarSystemGroup.add(new THREE.Line(og, om));
 
             // === REALISTIC MOONS ===
@@ -1052,7 +1046,6 @@
                     const moonGrp = new THREE.Group();
                     let moonTex;
                     if (m.useReal) {
-                        // Earth's moon — placeholder; real texture loaded after
                         const mCanvas = _canvas(512, 256);
                         const mctx = mCanvas.getContext('2d');
                         mctx.fillStyle = '#a8a8a8';
@@ -1073,14 +1066,13 @@
                     moonMesh.userData.isMoon = true;
                     moonGrp.add(moonMesh);
 
-                    // Faint moon orbit ring
                     const mPts = [];
                     for (let i = 0; i <= 64; i++) {
                         const a = (i / 64) * Math.PI * 2;
                         mPts.push(new THREE.Vector3(Math.cos(a) * m.o, 0, Math.sin(a) * m.o));
                     }
                     const mOrbitGeo = new THREE.BufferGeometry().setFromPoints(mPts);
-                    const mOrbitMat = new THREE.LineBasicMaterial({ color: 0x8090a8, transparent: true, opacity: 0.04 });
+                    const mOrbitMat = new THREE.LineBasicMaterial({ color: 0x556677, transparent: true, opacity: 0.04 });
                     moonGrp.add(new THREE.Line(mOrbitGeo, mOrbitMat));
 
                     if (m.incl !== undefined) moonGrp.rotation.x = m.incl;
@@ -1097,7 +1089,6 @@
         }
         const earthObj = planetObjs.find(g => g.userData.earth);
 
-        // Initialize camera at Earth's position
         currentTargetPlanetIndex = EARTH_INDEX;
         const _initEarthPos = new THREE.Vector3();
         planetObjs[EARTH_INDEX].getWorldPosition(_initEarthPos);
@@ -1108,16 +1099,43 @@
         camera.position.set(_initEarthPos.x + targetCameraZ, _initEarthPos.y + targetCameraZ * 0.3, _initEarthPos.z + targetCameraZ);
         camera.lookAt(_initEarthPos);
 
+        // === NEW REALISTIC ASTEROID BELT ===
         const asteroidBeltGroup = new THREE.Group();
-        const asteroidCount = 220;
         const asteroidMeshes = [];
-        const astGeo = new THREE.DodecahedronGeometry(0.08, 0);
-        const astMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.9, metalness: 0.25 });
-        for (let i = 0; i < asteroidCount; i++) {
-            const ast = new THREE.Mesh(astGeo, astMat);
-            const angle = (i / asteroidCount) * Math.PI * 2 + Math.random() * 0.1;
-            const dist = 20.5 + Math.random() * 2.2;
+        
+        // 1. Dust cloud (Clean and realistic)
+        const dustCount = 4000;
+        const dustPos = new Float32Array(dustCount * 3);
+        const dustColors = new Float32Array(dustCount * 3);
+        for (let i = 0; i < dustCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 20.0 + Math.random() * 2.5; 
             const yOffset = (Math.random() - 0.5) * 0.8;
+            dustPos[i*3] = Math.cos(angle) * dist;
+            dustPos[i*3+1] = yOffset;
+            dustPos[i*3+2] = Math.sin(angle) * dist;
+            
+            const c = new THREE.Color().setHSL(0.08, 0.15, 0.15 + Math.random() * 0.15);
+            dustColors[i*3] = c.r;
+            dustColors[i*3+1] = c.g;
+            dustColors[i*3+2] = c.b;
+        }
+        const dustGeo = new THREE.BufferGeometry();
+        dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+        dustGeo.setAttribute('color', new THREE.BufferAttribute(dustColors, 3));
+        const dustMat = new THREE.PointsMaterial({ size: 0.06, vertexColors: true, transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending });
+        const dustBelt = new THREE.Points(dustGeo, dustMat);
+        asteroidBeltGroup.add(dustBelt);
+
+        // 2. Individual larger rocks
+        const rockCount = 80;
+        const astGeo = new THREE.DodecahedronGeometry(0.03, 0);
+        const astMat = new THREE.MeshStandardMaterial({ color: 0x665f55, roughness: 0.95, metalness: 0.05 });
+        for (let i = 0; i < rockCount; i++) {
+            const ast = new THREE.Mesh(astGeo, astMat);
+            const angle = (i / rockCount) * Math.PI * 2 + Math.random() * 0.1;
+            const dist = 20.2 + Math.random() * 2.0;
+            const yOffset = (Math.random() - 0.5) * 0.6;
             ast.position.set(Math.cos(angle) * dist, yOffset, Math.sin(angle) * dist);
             ast.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
             ast.userData = { dist, angle, speed: 0.14 + Math.random() * 0.08, rotSpd: new THREE.Vector3((Math.random()-0.5)*0.03, (Math.random()-0.5)*0.03, (Math.random()-0.5)*0.03) };
@@ -1248,7 +1266,6 @@
             }
         }
 
-        // === SPACE / LANDING STATE ===
         let spaceState = 'space';
         let spaceProgress = 1;
         let solarAlpha = 1;
@@ -1629,6 +1646,7 @@
                 }
             }
             
+            asteroidBeltGroup.rotation.y += 0.00015 * speedMult;
             for (const ast of asteroidMeshes) {
                 ast.userData.angle += ast.userData.speed * 0.008 * speedMult;
                 const ra = ast.userData.angle;
