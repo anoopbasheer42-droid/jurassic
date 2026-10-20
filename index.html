@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -68,12 +69,12 @@
         .subtitle { text-align: center; font-family: 'Space Grotesk', sans-serif; font-size: 0.6rem; letter-spacing: 0.3em; color: var(--text-subtle); margin-top: 10px; font-weight: 500; text-transform: uppercase; }
         .speed-controls { display: flex; gap: 6px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
         
-        #map-overlay, #moon-overlay {
+        #map-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: 99999; opacity: 0; pointer-events: none; transition: opacity 1.5s ease;
             background: #000; display: flex; flex-direction: column;
         }
-        #map-overlay.active, #moon-overlay.active { opacity: 1; pointer-events: auto; }
+        #map-overlay.active { opacity: 1; pointer-events: auto; }
         #map { width: 100%; height: 100%; background: #000; flex: 1; }
         #street-view-container {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; z-index: 100000; background: #000;
@@ -146,17 +147,6 @@
             <button class="btn primary" onclick="flyToDubai()" id="btn-dubai" style="display: none;">Fly to Dubai ✈️</button>
             <button class="btn danger" onclick="exitMap()">Return to Space</button>
         </div>
-    </div>
-
-    <div id="moon-overlay">
-        <div style="width: 100%; height: 100%; background-image: url('https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/moonmap1k.jpg'); background-size: cover; background-position: center; filter: brightness(0.7) contrast(1.2);"></div>
-        <div style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 100001;">
-            <button class="btn primary" onclick="exitMoon()">Return to Space</button>
-        </div>
-    </div>
-
-    <div id="iss-overlay" style="position:fixed; top:20px; right:20px; z-index:100000; display:none;">
-        <button class="btn danger" onclick="exitISSView()">Leave ISS View</button>
     </div>
 
     <div class="dashboard">
@@ -571,7 +561,7 @@
                 if (!audioCtx) return;
                 const t2 = audioCtx.currentTime;
                 const aftOsc = audioCtx.createOscillator();
-                const aftGain = ctx.createGain();
+                const aftGain = audioCtx.createGain();
                 aftOsc.type = 'sine';
                 aftOsc.frequency.setValueAtTime(90, t2);
                 aftOsc.frequency.exponentialRampToValueAtTime(35, t2 + 0.4);
@@ -750,6 +740,121 @@
         })();
 
         const travelComets = [];
+
+        function makeCometTailTexLocal(rgb, ionized) {
+            const w = 512, h = 128;
+            const c = _canvas(w, h);
+            const ctx = c.getContext('2d');
+            const gx = ctx.createLinearGradient(0, 0, w, 0);
+            if (ionized) {
+                gx.addColorStop(0.0, 'rgba(240,248,255,1)');
+                gx.addColorStop(0.05, 'rgba(200,225,255,0.95)');
+                gx.addColorStop(0.15, `rgba(${rgb},0.7)`);
+                gx.addColorStop(0.35, `rgba(${rgb},0.35)`);
+                gx.addColorStop(0.6, `rgba(${rgb},0.12)`);
+                gx.addColorStop(0.85, `rgba(${rgb},0.03)`);
+                gx.addColorStop(1.0, `rgba(${rgb},0)`);
+            } else {
+                gx.addColorStop(0.0, 'rgba(255,250,230,1)');
+                gx.addColorStop(0.1, 'rgba(255,240,200,0.9)');
+                gx.addColorStop(0.3, `rgba(${rgb},0.55)`);
+                gx.addColorStop(0.6, `rgba(${rgb},0.18)`);
+                gx.addColorStop(0.85, `rgba(${rgb},0.05)`);
+                gx.addColorStop(1.0, `rgba(${rgb},0)`);
+            }
+            ctx.fillStyle = gx;
+            ctx.fillRect(0, 0, w, h);
+            const gy = ctx.createLinearGradient(0, 0, 0, h);
+            gy.addColorStop(0.0, 'rgba(0,0,0,0)');
+            gy.addColorStop(0.15, 'rgba(0,0,0,0.4)');
+            gy.addColorStop(0.35, 'rgba(0,0,0,0.85)');
+            gy.addColorStop(0.5, 'rgba(0,0,0,1)');
+            gy.addColorStop(0.65, 'rgba(0,0,0,0.85)');
+            gy.addColorStop(0.85, 'rgba(0,0,0,0.4)');
+            gy.addColorStop(1.0, 'rgba(0,0,0,0)');
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.fillStyle = gy;
+            ctx.fillRect(0, 0, w, h);
+            ctx.globalCompositeOperation = 'source-over';
+            return new THREE.CanvasTexture(c);
+        }
+        function makeCometHeadTexLocal() {
+            const size = 128; const c = _canvas(size, size); const ctx = c.getContext('2d'); const g = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.2, 'rgba(200,240,255,0.9)'); g.addColorStop(0.5, 'rgba(140,200,255,0.4)'); g.addColorStop(1, 'rgba(100,150,255,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, size, size); return new THREE.CanvasTexture(c);
+        }
+        const cometHeadTex = makeCometHeadTexLocal();
+
+        function spawnTravelComet() {
+            const cg = new THREE.Group();
+            const nSize = 0.05 + Math.random() * 0.08;
+            const nucleusColor = Math.random() > 0.5 ? 0xffffff : 0xddddff;
+            const nucleus = new THREE.Mesh(
+                new THREE.SphereGeometry(nSize, 16, 16),
+                new THREE.MeshStandardMaterial({ 
+                    color: nucleusColor, 
+                    roughness: 0.4,
+                    emissive: nucleusColor,
+                    emissiveIntensity: 0.5
+                })
+            );
+            cg.add(nucleus);
+            const headGlow = new THREE.Sprite(new THREE.SpriteMaterial({ 
+                map: cometHeadTex, 
+                transparent: true, 
+                opacity: 0.95, 
+                depthWrite: false, 
+                blending: THREE.AdditiveBlending 
+            }));
+            const scaleVar = 0.8 + Math.random() * 0.8;
+            headGlow.scale.set(scaleVar, scaleVar, 1);
+            cg.add(headGlow);
+
+            const isBlue = Math.random() > 0.5;
+            const ionRgb = isBlue ? '140,190,255' : '200,180,255';
+            const dustRgb = '255,220,170';
+
+            const ionTex = makeCometTailTexLocal(ionRgb, true);
+            for (let layer = 0; layer < 3; layer++) {
+                const tail = new THREE.Sprite(new THREE.SpriteMaterial({ 
+                    map: ionTex, 
+                    transparent: true, 
+                    opacity: (0.85 - layer * 0.2) * (0.85 + Math.random() * 0.15), 
+                    depthWrite: false, 
+                    blending: THREE.AdditiveBlending 
+                }));
+                const tLen = (18 + Math.random() * 10) - layer * 2.5;
+                tail.scale.set(tLen, (1.6 - layer * 0.35), 1);
+                tail.position.x = -tLen * 0.4 + layer * 0.2;
+                tail.position.z = -0.02 * layer;
+                cg.add(tail);
+            }
+            const dustTex = makeCometTailTexLocal(dustRgb, false);
+            for (let layer = 0; layer < 2; layer++) {
+                const tail = new THREE.Sprite(new THREE.SpriteMaterial({ 
+                    map: dustTex, 
+                    transparent: true, 
+                    opacity: (0.65 - layer * 0.2) * (0.8 + Math.random() * 0.2), 
+                    depthWrite: false, 
+                    blending: THREE.AdditiveBlending 
+                }));
+                const tLen = (12 + Math.random() * 8) - layer * 2;
+                tail.scale.set(tLen, (2.4 - layer * 0.6), 1);
+                tail.position.x = -tLen * 0.4 - 0.15;
+                tail.position.y = -0.2 - layer * 0.15;
+                tail.position.z = 0.05;
+                cg.add(tail);
+            }
+
+            const angle = Math.random() * Math.PI * 2;
+            const rStart = 400 + Math.random() * 300;
+            cg.position.set(Math.cos(angle) * rStart, (Math.random() - 0.5) * 120, Math.sin(angle) * rStart);
+            const dir = new THREE.Vector3(
+                -cg.position.x + (Math.random() - 0.5) * 50,
+                -cg.position.y + (Math.random() - 0.5) * 40,
+                -cg.position.z + (Math.random() - 0.5) * 50
+            ).normalize();
+            travelComets.push({ grp: cg, dir, speed: 2.2 + Math.random() * 2.8, life: 1 });
+            milkyWayGroup.add(cg);
+        }
         let travelCometTimer = 160;
         const meteoroids = [];
         (function buildMeteoroids() {
@@ -763,78 +868,11 @@
         solarSystemGroup.visible = true;
         scene.add(solarSystemGroup);
 
-        // REALISTIC SUN SHADER
-        const sunUniforms = {
-            time: { value: 0 },
-            color1: { value: new THREE.Color(0xffaa00) },
-            color2: { value: new THREE.Color(0xff3300) },
-            color3: { value: new THREE.Color(0xffffaa) }
-        };
-        const sunMat = new THREE.ShaderMaterial({
-            uniforms: sunUniforms,
-            vertexShader: `
-                varying vec2 vUv;
-                varying vec3 vPosition;
-                void main() {
-                    vUv = uv;
-                    vPosition = position;
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `,
-            fragmentShader: `
-                uniform float time;
-                uniform vec3 color1;
-                uniform vec3 color2;
-                uniform vec3 color3;
-                varying vec2 vUv;
-                varying vec3 vPosition;
-
-                vec3 hash3( vec3 p ) {
-                    p = vec3( dot(p,vec3(127.1,311.7, 74.7)),
-                              dot(p,vec3(269.5,183.3,246.1)),
-                              dot(p,vec3(113.5,271.9,124.6)));
-                    return -1.0 + 2.0*fract(sin(p)*43758.5453123);
-                }
-
-                float noise( in vec3 p ) {
-                    vec3 i = floor( p );
-                    vec3 f = fract( p );
-                    vec3 u = f*f*(3.0-2.0*f);
-                    return mix( mix( mix( dot( hash3( i + vec3(0.0,0.0,0.0) ), f - vec3(0.0,0.0,0.0) ), 
-                                          dot( hash3( i + vec3(1.0,0.0,0.0) ), f - vec3(1.0,0.0,0.0) ), u.x),
-                                     mix( dot( hash3( i + vec3(0.0,1.0,0.0) ), f - vec3(0.0,1.0,0.0) ), 
-                                          dot( hash3( i + vec3(1.0,1.0,0.0) ), f - vec3(1.0,1.0,0.0) ), u.x), u.y),
-                                mix( mix( dot( hash3( i + vec3(0.0,0.0,1.0) ), f - vec3(0.0,0.0,1.0) ), 
-                                          dot( hash3( i + vec3(1.0,0.0,1.0) ), f - vec3(1.0,0.0,1.0) ), u.x),
-                                     mix( dot( hash3( i + vec3(0.0,1.0,1.0) ), f - vec3(0.0,1.0,1.0) ), 
-                                          dot( hash3( i + vec3(1.0,1.0,1.0) ), f - vec3(1.0,1.0,1.0) ), u.x), u.y), u.z );
-                }
-
-                float fbm( vec3 p ) {
-                    float f = 0.0;
-                    f += 0.5000 * noise(p); p = p*2.02;
-                    f += 0.2500 * noise(p); p = p*2.03;
-                    f += 0.1250 * noise(p); p = p*2.01;
-                    f += 0.0625 * noise(p);
-                    return f;
-                }
-
-                void main() {
-                    vec3 p = vPosition * 0.8;
-                    float n = fbm(p + vec3(0.0, time * 0.2, 0.0));
-                    
-                    vec3 col = mix(color2, color1, n * 0.5 + 0.5);
-                    col = mix(col, color3, pow(n * 0.5 + 0.5, 3.0));
-                    
-                    float edge = 1.0 - max(dot(normalize(vPosition), vec3(0.0, 0.0, 1.0)), 0.0);
-                    col -= edge * 0.4;
-                    
-                    gl_FragColor = vec4(col, 1.0);
-                }
-            `
-        });
         const sunGroup = new THREE.Group();
-        const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(1.6, 128, 128), sunMat);
+        const sunMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(1.6, 128, 128),
+            new THREE.MeshBasicMaterial({ color: 0xffcc66 })
+        );
         sunGroup.add(sunMesh);
 
         const sunCoronaCanvas = _canvas(1024, 1024);
@@ -860,41 +898,6 @@
         sunGroup.add(sunFillLight);
 
         solarSystemGroup.add(sunGroup);
-
-        // === 3I/ATLAS INTERSTELLAR OBJECT ===
-        const atlasGroup = new THREE.Group();
-        const atlasCore = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.03, 0.08, 0.4, 8),
-            new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.8, metalness: 0.2 })
-        );
-        atlasCore.rotation.x = Math.PI / 4;
-        atlasGroup.add(atlasCore);
-
-        const atlasTailCanvas = _canvas(128, 512);
-        const atCtx = atlasTailCanvas.getContext('2d');
-        const atGrad = atCtx.createLinearGradient(0, 0, 0, 512);
-        atGrad.addColorStop(0, 'rgba(0, 200, 255, 1)');
-        atGrad.addColorStop(0.2, 'rgba(0, 150, 255, 0.8)');
-        atGrad.addColorStop(0.6, 'rgba(0, 50, 200, 0.2)');
-        atGrad.addColorStop(1, 'rgba(0, 0, 100, 0)');
-        atCtx.fillStyle = atGrad;
-        atCtx.fillRect(0, 0, 128, 512);
-        const atlasTailTex = new THREE.CanvasTexture(atlasTailCanvas);
-
-        const atlasTail = new THREE.Mesh(
-            new THREE.ConeGeometry(0.15, 3.0, 16, 1, true),
-            new THREE.MeshBasicMaterial({ map: atlasTailTex, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false })
-        );
-        atlasTail.position.set(0, -1.5, 0);
-        atlasGroup.add(atlasTail);
-
-        const atlasHead = new THREE.Mesh(
-            new THREE.SphereGeometry(0.1, 16, 16),
-            new THREE.MeshBasicMaterial({ color: 0xaaffff, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending })
-        );
-        atlasGroup.add(atlasHead);
-
-        solarSystemGroup.add(atlasGroup);
 
         const PLANET_DATA = [
             { name:'Mercury', r:0.20, o:6,   fb:['#8a7f75', '100,90,80'],   spd:0.42, rotSpd:0.005, roughness:0.95, metalness:0.05,
@@ -1030,6 +1033,14 @@
                 grp.add(ring2);
             }
 
+            // === FAINT ORBIT LINE ===
+            const pts = [];
+            for (let i = 0; i <= 160; i++) { const a = (i / 160) * Math.PI * 2; pts.push(new THREE.Vector3(Math.cos(a) * p.o, 0, Math.sin(a) * p.o)); }
+            const og = new THREE.BufferGeometry().setFromPoints(pts);
+            const om = new THREE.LineBasicMaterial({ color: 0x6e7f95, transparent: true, opacity: 0.08 });
+            solarSystemGroup.add(new THREE.Line(og, om));
+
+            // === REALISTIC MOONS ===
             const moons = [];
             if (p.moons) {
                 for (const m of p.moons) {
@@ -1055,6 +1066,15 @@
                     moonMesh.position.x = m.o;
                     moonMesh.userData.isMoon = true;
                     moonGrp.add(moonMesh);
+
+                    const mPts = [];
+                    for (let i = 0; i <= 64; i++) {
+                        const a = (i / 64) * Math.PI * 2;
+                        mPts.push(new THREE.Vector3(Math.cos(a) * m.o, 0, Math.sin(a) * m.o));
+                    }
+                    const mOrbitGeo = new THREE.BufferGeometry().setFromPoints(mPts);
+                    const mOrbitMat = new THREE.LineBasicMaterial({ color: 0x556677, transparent: true, opacity: 0.04 });
+                    moonGrp.add(new THREE.Line(mOrbitGeo, mOrbitMat));
 
                     if (m.incl !== undefined) moonGrp.rotation.x = m.incl;
                     grp.add(moonGrp);
@@ -1084,6 +1104,7 @@
         const asteroidBeltGroup = new THREE.Group();
         const asteroidMeshes = [];
         
+        // 1. Dust cloud (Clean and realistic)
         const dustCount = 4000;
         const dustPos = new Float32Array(dustCount * 3);
         const dustColors = new Float32Array(dustCount * 3);
@@ -1107,6 +1128,7 @@
         const dustBelt = new THREE.Points(dustGeo, dustMat);
         asteroidBeltGroup.add(dustBelt);
 
+        // 2. Individual larger rocks
         const rockCount = 80;
         const astGeo = new THREE.DodecahedronGeometry(0.03, 0);
         const astMat = new THREE.MeshStandardMaterial({ color: 0x665f55, roughness: 0.95, metalness: 0.05 });
@@ -1123,146 +1145,24 @@
         }
         solarSystemGroup.add(asteroidBeltGroup);
 
-        // === ISS AND ASTRONAUTS REPLACEMENT ===
-        const issGroup = new THREE.Group();
-        const astronauts = [];
-        const astronautStates = ['repair', 'float', 'spin', 'photo', 'check_tether', 'wave', 'salute', 'drift'];
-
-        function createAstronaut() {
-            const g = new THREE.Group();
-            const matWhite = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
-            const matVisor = new THREE.MeshStandardMaterial({ color: 0xffaa00, metalness: 0.9, roughness: 0.1 });
-            
-            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.0015, 0.0015, 0.004, 8), matWhite);
-            g.add(body);
-            
-            const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.0015, 8, 8), matWhite);
-            helmet.position.y = 0.0025;
-            g.add(helmet);
-            
-            const visor = new THREE.Mesh(new THREE.SphereGeometry(0.0012, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2), matVisor);
-            visor.position.set(0, 0.0025, 0.0008);
-            visor.rotation.x = Math.PI / 2;
-            g.add(visor);
-            
-            const pack = new THREE.Mesh(new THREE.BoxGeometry(0.002, 0.003, 0.001), matWhite);
-            pack.position.set(0, 0, -0.001);
-            g.add(pack);
-            
-            const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.0004, 0.0004, 0.002, 6), matWhite);
-            armL.position.set(-0.0018, 0.001, 0);
-            armL.rotation.z = Math.PI / 4;
-            g.add(armL);
-            
-            const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.0004, 0.0004, 0.002, 6), matWhite);
-            armR.position.set(0.0018, 0.001, 0);
-            armR.rotation.z = -Math.PI / 4;
-            g.add(armR);
-            
-            const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.0004, 0.0004, 0.002, 6), matWhite);
-            legL.position.set(-0.0008, -0.002, 0);
-            legL.rotation.z = Math.PI / 6;
-            g.add(legL);
-            
-            const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.0004, 0.0004, 0.002, 6), matWhite);
-            legR.position.set(0.0008, -0.002, 0);
-            legR.rotation.z = -Math.PI / 6;
-            g.add(legR);
-            
-            const tetherGeo = new THREE.BufferGeometry();
-            const tetherPos = new Float32Array(6);
-            tetherGeo.setAttribute('position', new THREE.BufferAttribute(tetherPos, 3));
-            const tetherMat = new THREE.LineBasicMaterial({ color: 0xcccccc, transparent: true, opacity: 0.6 });
-            const tether = new THREE.Line(tetherGeo, tetherMat);
-            
-            return { group: g, armL, armR, legL, legR, tether, tetherPos, state: 'idle', timer: 0, targetPos: new THREE.Vector3() };
-        }
-
+        const satelliteGroup = new THREE.Group();
         if (earthObj) {
-            earthObj.add(issGroup);
-            
-            issGroup.position.set(0.55, 0.05, 0);
-            issGroup.scale.set(2.5, 2.5, 2.5); 
-
-            const matWhite = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 });
-            const matMetal = new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 0.8, roughness: 0.4 });
-            const matSolar = new THREE.MeshStandardMaterial({ color: 0x0a1c3a, metalness: 0.8, roughness: 0.3, side: THREE.DoubleSide });
-            
-            const truss = new THREE.Mesh(new THREE.CylinderGeometry(0.0015, 0.0015, 0.12, 8), matMetal);
-            truss.rotation.z = Math.PI / 2;
-            issGroup.add(truss);
-            
-            const truss2 = new THREE.Mesh(new THREE.CylinderGeometry(0.001, 0.001, 0.12, 6), matMetal);
-            truss2.rotation.z = Math.PI / 2;
-            truss2.position.set(0, 0.003, 0);
-            issGroup.add(truss2);
-            
-            const modulesData = [
-                { r: 0.004, l: 0.03, pos: [0, -0.005, 0], rot: [Math.PI/2, 0, 0] },
-                { r: 0.003, l: 0.025, pos: [0.01, -0.005, 0.01], rot: [Math.PI/2, 0, 0] },
-                { r: 0.003, l: 0.02, pos: [-0.01, -0.005, 0.008], rot: [Math.PI/2, 0, 0] },
-                { r: 0.002, l: 0.02, pos: [0, -0.01, 0], rot: [Math.PI/2, 0, 0] }
-            ];
-            for (let m of modulesData) {
-                const mod = new THREE.Mesh(new THREE.CylinderGeometry(m.r, m.r, m.l, 12), matWhite);
-                mod.position.set(...m.pos);
-                mod.rotation.set(...m.rot);
-                issGroup.add(mod);
-            }
-            
-            for (let i = 1; i <= 4; i++) {
-                const offset = i * 0.015;
-                
-                const wingR = new THREE.Group();
-                wingR.position.set(offset, 0, 0);
-                const panelR = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.04, 0.0005), matSolar);
-                panelR.position.y = 0.02;
-                wingR.add(panelR);
-                const panelR2 = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.04, 0.0005), matSolar);
-                panelR2.position.y = -0.02;
-                wingR.add(panelR2);
-                issGroup.add(wingR);
-                
-                const wingL = new THREE.Group();
-                wingL.position.set(-offset, 0, 0);
-                const panelL = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.04, 0.0005), matSolar);
-                panelL.position.y = 0.02;
-                wingL.add(panelL);
-                const panelL2 = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.04, 0.0005), matSolar);
-                panelL2.position.y = -0.02;
-                wingL.add(panelL2);
-                issGroup.add(wingL);
-            }
-            
+            earthObj.add(satelliteGroup);
+            const satGeo = new THREE.BoxGeometry(0.015, 0.015, 0.04);
+            const satMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9, roughness: 0.1 });
+            const panelMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, side: THREE.DoubleSide, roughness: 0.3, metalness: 0.6 });
             for (let i = 0; i < 3; i++) {
-                const rad = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.008, 0.0005), matWhite);
-                rad.position.set(0, 0, 0.005 + i * 0.004);
-                rad.rotation.x = Math.PI / 2;
-                issGroup.add(rad);
-            }
-            
-            const armGroup = new THREE.Group();
-            const armSeg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.0008, 0.0008, 0.03, 6), matWhite);
-            armSeg1.position.y = 0.015;
-            armGroup.add(armSeg1);
-            const armSeg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.0008, 0.0008, 0.03, 6), matWhite);
-            armSeg2.position.set(0.015, 0.03, 0);
-            armSeg2.rotation.z = -Math.PI / 4;
-            armGroup.add(armSeg2);
-            armGroup.position.set(0.02, -0.005, 0.005);
-            issGroup.add(armGroup);
-            
-            for (let i = 0; i < 2; i++) {
-                const astro = createAstronaut();
-                const g = astro.group;
-                g.position.set((Math.random() - 0.5) * 0.05, (Math.random() - 0.5) * 0.05, (Math.random() - 0.5) * 0.03);
-                issGroup.add(g);
-                issGroup.add(astro.tether);
-                
-                astro.targetPos.copy(g.position);
-                astro.state = astronautStates[Math.floor(Math.random() * astronautStates.length)];
-                astro.timer = 2 + Math.random() * 3;
-                astronauts.push(astro);
+                const sat = new THREE.Group();
+                const body = new THREE.Mesh(satGeo, satMat);
+                sat.add(body);
+                const panelL = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 0.03), panelMat);
+                panelL.position.x = 0.05;
+                sat.add(panelL);
+                const panelR = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 0.03), panelMat);
+                panelR.position.x = -0.05;
+                sat.add(panelR);
+                sat.userData = { orbitRadius: 0.6 + i * 0.18, speed: 0.8 + i * 0.4, angle: (i * Math.PI * 2) / 3, incl: (Math.random() - 0.5) * 1.2 };
+                satelliteGroup.add(sat);
             }
         }
 
@@ -1308,6 +1208,13 @@
                 onLoad(tex);
             }, undefined, () => {});
         }
+
+        loadRealTex('Sun', (tex) => {
+            tex.encoding = THREE.sRGBEncoding;
+            sunMesh.material.map = tex;
+            sunMesh.material.color.setHex(0xffffff);
+            sunMesh.material.needsUpdate = true;
+        });
 
         for (const grp of planetObjs) {
             const name = grp.userData.name;
@@ -1391,45 +1298,6 @@
             document.getElementById('map-overlay').style.background = 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.9) 100%)';
         }
 
-        function triggerMoonLanding() {
-            if (landingState !== 'none') return;
-            landingState = 'diving_moon';
-            if (earthObj && earthObj.userData.moons[0]) {
-                earthObj.userData.moons[0].mesh.getWorldPosition(landingTarget);
-            }
-        }
-
-        function exitMoon() {
-            document.getElementById('moon-overlay').classList.remove('active');
-            setTimeout(() => {
-                document.getElementById('moon-overlay').style.display = 'none';
-                landingState = 'none';
-                currentTargetPlanetIndex = EARTH_INDEX;
-            }, 1500);
-        }
-
-        function triggerISSView() {
-            if (landingState !== 'none') return;
-            landingState = 'iss_view';
-            document.getElementById('iss-overlay').style.display = 'block';
-            
-            // Randomize astronaut states so it's always different
-            astronauts.forEach(astro => {
-                let newState = astro.state;
-                while (newState === astro.state) {
-                    newState = astronautStates[Math.floor(Math.random() * astronautStates.length)];
-                }
-                astro.state = newState;
-                astro.timer = 5 + Math.random() * 5;
-            });
-        }
-
-        function exitISSView() {
-            document.getElementById('iss-overlay').style.display = 'none';
-            landingState = 'none';
-            currentTargetPlanetIndex = EARTH_INDEX;
-        }
-
         function exitMap() {
             document.getElementById('map-overlay').classList.remove('active');
             document.getElementById('map-exit').classList.remove('active');
@@ -1440,6 +1308,8 @@
                 if (map) { map.remove(); map = null; }
                 landingState = 'none';
                 currentTargetPlanetIndex = EARTH_INDEX;
+                const earthRadius = planetObjs[EARTH_INDEX].userData.sphere.geometry.parameters.radius;
+                targetCameraZ = earthRadius * 6;
                 issLastTapTime = 0;
             }, 1500);
         }
@@ -1447,7 +1317,7 @@
         const issHint = document.createElement('div');
         issHint.id = 'iss-hint';
         issHint.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:10px 20px; border-radius:20px; font-family:Inter, sans-serif; font-size:12px; letter-spacing:0.1em; text-transform:uppercase; opacity:0; transition:opacity 0.5s; z-index:100; border:1px solid rgba(139,92,246,0.5); pointer-events:none;';
-        issHint.innerText = 'Double-tap planets, moon, or ISS to interact';
+        issHint.innerText = 'Double-tap any planet to travel · Pinch to zoom';
         document.body.appendChild(issHint);
         setTimeout(() => { issHint.style.opacity = '1'; }, 2000);
         setTimeout(() => { issHint.style.opacity = '0'; }, 8000);
@@ -1577,24 +1447,6 @@
                     best = { index: -1, distance: sunHits[0].distance, isSun: true };
                 }
             }
-            if (earthObj && earthObj.userData.moons) {
-                for (const m of earthObj.userData.moons) {
-                    const mHits = raycaster.intersectObject(m.mesh, false);
-                    if (mHits.length > 0) {
-                        if (!best || mHits[0].distance < best.distance) {
-                            best = { isMoon: true, distance: mHits[0].distance };
-                        }
-                    }
-                }
-            }
-            if (issGroup) {
-                const issHits = raycaster.intersectObject(issGroup, true);
-                if (issHits.length > 0) {
-                    if (!best || issHits[0].distance < best.distance) {
-                        best = { isISS: true, distance: issHits[0].distance };
-                    }
-                }
-            }
             return best;
         }
 
@@ -1625,11 +1477,7 @@
                 if (Math.sqrt(dx*dx + dy*dy) < 60) {
                     const hit = raycastPlanetHit(e);
                     if (hit !== null) {
-                        if (hit.isMoon) {
-                            triggerMoonLanding();
-                        } else if (hit.isISS) {
-                            triggerISSView();
-                        } else if (hit.index === EARTH_INDEX && currentTargetPlanetIndex === EARTH_INDEX) {
+                        if (hit.index === EARTH_INDEX && currentTargetPlanetIndex === EARTH_INDEX) {
                             triggerEarthLanding();
                         } else {
                             flyToPlanet(hit.index);
@@ -1734,114 +1582,8 @@
                 renderer.render(scene, camera);
                 return;
             }
-
-            if (landingState === 'diving_moon') {
-                camera.position.lerp(landingTarget, 0.15);
-                camera.position.x += (Math.random() - 0.5) * 0.1;
-                camera.position.y += (Math.random() - 0.5) * 0.1;
-                camera.lookAt(landingTarget);
-                if (camera.position.distanceTo(landingTarget) < 0.5) {
-                    landingState = 'landed_moon';
-                    const overlay = document.getElementById('moon-overlay');
-                    overlay.style.display = 'block';
-                    setTimeout(() => { overlay.classList.add('active'); }, 100);
-                }
-                renderer.render(scene, camera);
-                return;
-            }
-
-            if (landingState === 'iss_view') {
-                const issWorldPos = new THREE.Vector3();
-                issGroup.getWorldPosition(issWorldPos);
-                
-                cameraTheta += 0.003;
-                const r = 0.5;
-                const cx = issWorldPos.x + r * Math.cos(cameraPhi) * Math.sin(cameraTheta);
-                const cy = issWorldPos.y + r * Math.sin(cameraPhi);
-                const cz = issWorldPos.z + r * Math.cos(cameraPhi) * Math.cos(cameraTheta);
-                
-                camera.position.lerp(new THREE.Vector3(cx, cy, cz), 0.05);
-                camera.lookAt(issWorldPos);
-                
-                const ts = nowMs * 0.001;
-                for (let astro of astronauts) {
-                    astro.timer -= 0.016;
-                    const g = astro.group;
-                    
-                    if (astro.timer <= 0) {
-                        let newState = astro.state;
-                        while (newState === astro.state) {
-                            newState = astronautStates[Math.floor(Math.random() * astronautStates.length)];
-                        }
-                        astro.state = newState;
-                        astro.timer = 3 + Math.random() * 4;
-                        
-                        if (astro.state === 'float' || astro.state === 'drift') {
-                            astro.targetPos.set(
-                                (Math.random() - 0.5) * 0.08,
-                                (Math.random() - 0.5) * 0.08,
-                                (Math.random() - 0.5) * 0.05
-                            );
-                        }
-                    }
-                    
-                    astro.tetherPos[0] = g.position.x;
-                    astro.tetherPos[1] = g.position.y;
-                    astro.tetherPos[2] = g.position.z;
-                    astro.tetherPos[3] = 0;
-                    astro.tetherPos[4] = 0;
-                    astro.tetherPos[5] = 0;
-                    astro.tether.geometry.attributes.position.needsUpdate = true;
-                    
-                    if (astro.state === 'float' || astro.state === 'drift') {
-                        g.position.lerp(astro.targetPos, 0.02);
-                        g.rotation.x += 0.005;
-                        g.rotation.y += 0.008;
-                        astro.armL.rotation.z = Math.PI / 4;
-                        astro.armR.rotation.z = -Math.PI / 4;
-                    } else if (astro.state === 'repair') {
-                        g.rotation.x = 0;
-                        g.rotation.y = 0;
-                        astro.armL.rotation.z = Math.PI / 4 + Math.sin(nowMs * 0.01) * 0.5;
-                        astro.armR.rotation.z = -Math.PI / 4 - Math.sin(nowMs * 0.01) * 0.5;
-                        g.position.lerp(new THREE.Vector3(0.01, -0.01, 0.01), 0.01);
-                    } else if (astro.state === 'spin') {
-                        g.rotation.y += 0.05;
-                        astro.armL.rotation.z = Math.PI / 2;
-                        astro.armR.rotation.z = -Math.PI / 2;
-                    } else if (astro.state === 'photo') {
-                        g.rotation.x = 0;
-                        g.rotation.y = 0;
-                        astro.armL.rotation.z = Math.PI / 3;
-                        astro.armR.rotation.z = -Math.PI / 3;
-                        astro.armR.rotation.x = Math.PI / 2;
-                        astro.armL.rotation.x = Math.PI / 2;
-                        g.position.lerp(new THREE.Vector3(-0.03, 0.02, 0.02), 0.01);
-                    } else if (astro.state === 'check_tether') {
-                        g.rotation.x = 0;
-                        g.rotation.y = 0;
-                        astro.armL.rotation.z = Math.PI / 2;
-                        astro.armR.rotation.z = -Math.PI / 4;
-                        g.position.lerp(new THREE.Vector3(0, 0, 0.03), 0.01);
-                    } else if (astro.state === 'wave') {
-                        g.rotation.x = 0;
-                        g.rotation.y = 0;
-                        astro.armR.rotation.z = -Math.PI / 2 + Math.sin(nowMs * 0.02) * 0.5;
-                        astro.armL.rotation.z = Math.PI / 4;
-                    } else if (astro.state === 'salute') {
-                        g.rotation.x = 0;
-                        g.rotation.y = 0;
-                        astro.armR.rotation.z = -Math.PI / 1.5;
-                        astro.armL.rotation.z = Math.PI / 4;
-                        g.position.lerp(new THREE.Vector3(0, 0.03, 0), 0.01);
-                    }
-                }
-                
-                renderer.render(scene, camera);
-                return;
-            }
             
-            if (landingState === 'landed' || landingState === 'landed_moon') {
+            if (landingState === 'landed') {
                 updateCosmicBirth();
                 renderer.render(scene, camera);
                 return;
@@ -1889,10 +1631,6 @@
             const ts = nowMs * 0.001;
             const speedMult = orbitSpeedMultiplier;
             
-            if (sunUniforms) {
-                sunUniforms.time.value = ts;
-            }
-            
             for (const grp of planetObjs) {
                 const ud = grp.userData;
                 const a = ud.angle + ts * ud.speed * 0.04 * speedMult;
@@ -1908,18 +1646,6 @@
                     }
                 }
             }
-
-            // === 3I/ATLAS ANIMATION ===
-            const atlasAngle = ts * 0.12;
-            const atlasA = 50; 
-            const atlasE = 0.85; 
-            const atlasR = (atlasA * (1 - atlasE * atlasE)) / (1 + atlasE * Math.cos(atlasAngle));
-            const ax = Math.cos(atlasAngle) * atlasR;
-            const az = Math.sin(atlasAngle) * atlasR;
-            const ay = Math.sin(atlasAngle * 1.5) * 15; 
-            atlasGroup.position.set(ax, ay, az);
-            atlasGroup.lookAt(0, 0, 0);
-            atlasTail.rotation.x = Math.PI / 2;
             
             asteroidBeltGroup.rotation.y += 0.00015 * speedMult;
             for (const ast of asteroidMeshes) {
@@ -1941,91 +1667,13 @@
             const ci = 6.5 + Math.sin(ts * 3.2) * 0.25;
             sunCoronaInner.scale.set(ci, ci, 1);
 
-            if (issGroup) {
-                const issOrbitSpeed = 0.8 * speedMult;
-                const issAngle = ts * issOrbitSpeed;
-                issGroup.position.x = Math.cos(issAngle) * 0.65;
-                issGroup.position.z = Math.sin(issAngle) * 0.65;
-                issGroup.position.y = Math.sin(issAngle) * 0.15; 
-                issGroup.rotation.y = -issAngle + Math.PI/2;
-
-                issGroup.children.forEach(child => {
-                    if (child.children.length === 2 && child.children[0].material && child.children[0].material.color.getHex() === 0x0a1c3a) {
-                        child.rotation.y += 0.001 * speedMult;
-                    }
-                });
-
-                for (let astro of astronauts) {
-                    astro.timer -= 0.016;
-                    const g = astro.group;
-                    
-                    if (astro.timer <= 0) {
-                        let newState = astro.state;
-                        while (newState === astro.state) {
-                            newState = astronautStates[Math.floor(Math.random() * astronautStates.length)];
-                        }
-                        astro.state = newState;
-                        astro.timer = 3 + Math.random() * 4;
-                        
-                        if (astro.state === 'float' || astro.state === 'drift') {
-                            astro.targetPos.set(
-                                (Math.random() - 0.5) * 0.06,
-                                (Math.random() - 0.5) * 0.06,
-                                (Math.random() - 0.5) * 0.04
-                            );
-                        }
-                    }
-                    
-                    astro.tetherPos[0] = g.position.x;
-                    astro.tetherPos[1] = g.position.y;
-                    astro.tetherPos[2] = g.position.z;
-                    astro.tetherPos[3] = 0;
-                    astro.tetherPos[4] = 0;
-                    astro.tetherPos[5] = 0;
-                    astro.tether.geometry.attributes.position.needsUpdate = true;
-                    
-                    if (astro.state === 'float' || astro.state === 'drift') {
-                        g.position.lerp(astro.targetPos, 0.02);
-                        g.rotation.x += 0.005;
-                        g.rotation.y += 0.008;
-                        astro.armL.rotation.z = Math.PI / 4;
-                        astro.armR.rotation.z = -Math.PI / 4;
-                    } else if (astro.state === 'repair') {
-                        g.rotation.x = 0;
-                        g.rotation.y = 0;
-                        astro.armL.rotation.z = Math.PI / 4 + Math.sin(nowMs * 0.01) * 0.5;
-                        astro.armR.rotation.z = -Math.PI / 4 - Math.sin(nowMs * 0.01) * 0.5;
-                        g.position.lerp(new THREE.Vector3(0.01, -0.01, 0.01), 0.01);
-                    } else if (astro.state === 'spin') {
-                        g.rotation.y += 0.05;
-                        astro.armL.rotation.z = Math.PI / 2;
-                        astro.armR.rotation.z = -Math.PI / 2;
-                    } else if (astro.state === 'photo') {
-                        g.rotation.x = 0;
-                        g.rotation.y = 0;
-                        astro.armL.rotation.z = Math.PI / 3;
-                        astro.armR.rotation.z = -Math.PI / 3;
-                        astro.armR.rotation.x = Math.PI / 2;
-                        astro.armL.rotation.x = Math.PI / 2;
-                        g.position.lerp(new THREE.Vector3(-0.03, 0.02, 0.02), 0.01);
-                    } else if (astro.state === 'check_tether') {
-                        g.rotation.x = 0;
-                        g.rotation.y = 0;
-                        astro.armL.rotation.z = Math.PI / 2;
-                        astro.armR.rotation.z = -Math.PI / 4;
-                        g.position.lerp(new THREE.Vector3(0, 0, 0.03), 0.01);
-                    } else if (astro.state === 'wave') {
-                        g.rotation.x = 0;
-                        g.rotation.y = 0;
-                        astro.armR.rotation.z = -Math.PI / 2 + Math.sin(nowMs * 0.02) * 0.5;
-                        astro.armL.rotation.z = Math.PI / 4;
-                    } else if (astro.state === 'salute') {
-                        g.rotation.x = 0;
-                        g.rotation.y = 0;
-                        astro.armR.rotation.z = -Math.PI / 1.5;
-                        astro.armL.rotation.z = Math.PI / 4;
-                        g.position.lerp(new THREE.Vector3(0, 0.03, 0), 0.01);
-                    }
+            if (satelliteGroup) {
+                for (const sat of satelliteGroup.children) {
+                    sat.userData.angle += sat.userData.speed * 0.01 * speedMult;
+                    const ra = sat.userData.angle;
+                    const r = sat.userData.orbitRadius;
+                    sat.position.set(Math.cos(ra) * r, Math.sin(ra) * r * Math.sin(sat.userData.incl), Math.sin(ra) * r * Math.cos(sat.userData.incl));
+                    sat.rotation.y = -ra;
                 }
             }
 
@@ -2816,3 +2464,4 @@ Time awareness (STRICT): ${mealContext}${askedBlock}`;
     </script>
 </body>
 </html>
+
