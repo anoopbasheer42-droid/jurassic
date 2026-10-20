@@ -560,7 +560,7 @@
                 if (!audioCtx) return;
                 const t2 = audioCtx.currentTime;
                 const aftOsc = audioCtx.createOscillator();
-                const aftGain = audioCtx.createGain();
+                const aftGain = ctx.createGain();
                 aftOsc.type = 'sine';
                 aftOsc.frequency.setValueAtTime(90, t2);
                 aftOsc.frequency.exponentialRampToValueAtTime(35, t2 + 0.4);
@@ -1036,7 +1036,7 @@
             const pts = [];
             for (let i = 0; i <= 160; i++) { const a = (i / 160) * Math.PI * 2; pts.push(new THREE.Vector3(Math.cos(a) * p.o, 0, Math.sin(a) * p.o)); }
             const og = new THREE.BufferGeometry().setFromPoints(pts);
-            const om = new THREE.LineBasicMaterial({ color: 0x6e7f95, transparent: true, opacity: 0.08 });
+            const om = new THREE.LineBasicMaterial({ color: 0x6e7f95, transparent: true, opacity: 0.02 }); // Extremely faint
             solarSystemGroup.add(new THREE.Line(og, om));
 
             // === REALISTIC MOONS ===
@@ -1072,7 +1072,7 @@
                         mPts.push(new THREE.Vector3(Math.cos(a) * m.o, 0, Math.sin(a) * m.o));
                     }
                     const mOrbitGeo = new THREE.BufferGeometry().setFromPoints(mPts);
-                    const mOrbitMat = new THREE.LineBasicMaterial({ color: 0x556677, transparent: true, opacity: 0.04 });
+                    const mOrbitMat = new THREE.LineBasicMaterial({ color: 0x556677, transparent: true, opacity: 0.01 }); // Extremely faint
                     moonGrp.add(new THREE.Line(mOrbitGeo, mOrbitMat));
 
                     if (m.incl !== undefined) moonGrp.rotation.x = m.incl;
@@ -1103,7 +1103,6 @@
         const asteroidBeltGroup = new THREE.Group();
         const asteroidMeshes = [];
         
-        // 1. Dust cloud (Clean and realistic)
         const dustCount = 4000;
         const dustPos = new Float32Array(dustCount * 3);
         const dustColors = new Float32Array(dustCount * 3);
@@ -1127,7 +1126,6 @@
         const dustBelt = new THREE.Points(dustGeo, dustMat);
         asteroidBeltGroup.add(dustBelt);
 
-        // 2. Individual larger rocks
         const rockCount = 80;
         const astGeo = new THREE.DodecahedronGeometry(0.03, 0);
         const astMat = new THREE.MeshStandardMaterial({ color: 0x665f55, roughness: 0.95, metalness: 0.05 });
@@ -1144,24 +1142,143 @@
         }
         solarSystemGroup.add(asteroidBeltGroup);
 
-        const satelliteGroup = new THREE.Group();
+        // === ISS AND ASTRONAUTS REPLACEMENT ===
+        const issGroup = new THREE.Group();
+        const astronauts = [];
+        const astronautStates = ['repair', 'float', 'spin', 'photo', 'check_tether', 'wave'];
+
+        function createAstronaut() {
+            const g = new THREE.Group();
+            const matWhite = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
+            const matVisor = new THREE.MeshStandardMaterial({ color: 0xffaa00, metalness: 0.9, roughness: 0.1 });
+            
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.0015, 0.0015, 0.004, 8), matWhite);
+            g.add(body);
+            
+            const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.0015, 8, 8), matWhite);
+            helmet.position.y = 0.0025;
+            g.add(helmet);
+            
+            const visor = new THREE.Mesh(new THREE.SphereGeometry(0.0012, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2), matVisor);
+            visor.position.set(0, 0.0025, 0.0008);
+            visor.rotation.x = Math.PI / 2;
+            g.add(visor);
+            
+            const pack = new THREE.Mesh(new THREE.BoxGeometry(0.002, 0.003, 0.001), matWhite);
+            pack.position.set(0, 0, -0.001);
+            g.add(pack);
+            
+            const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.0004, 0.0004, 0.002, 6), matWhite);
+            armL.position.set(-0.0018, 0.001, 0);
+            armL.rotation.z = Math.PI / 4;
+            g.add(armL);
+            
+            const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.0004, 0.0004, 0.002, 6), matWhite);
+            armR.position.set(0.0018, 0.001, 0);
+            armR.rotation.z = -Math.PI / 4;
+            g.add(armR);
+            
+            const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.0004, 0.0004, 0.002, 6), matWhite);
+            legL.position.set(-0.0008, -0.002, 0);
+            legL.rotation.z = Math.PI / 6;
+            g.add(legL);
+            
+            const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.0004, 0.0004, 0.002, 6), matWhite);
+            legR.position.set(0.0008, -0.002, 0);
+            legR.rotation.z = -Math.PI / 6;
+            g.add(legR);
+            
+            const tetherGeo = new THREE.BufferGeometry();
+            const tetherPos = new Float32Array(6);
+            tetherGeo.setAttribute('position', new THREE.BufferAttribute(tetherPos, 3));
+            const tetherMat = new THREE.LineBasicMaterial({ color: 0xcccccc, transparent: true, opacity: 0.6 });
+            const tether = new THREE.Line(tetherGeo, tetherMat);
+            
+            return { group: g, armL, armR, legL, legR, tether, tetherPos, state: 'idle', timer: 0, targetPos: new THREE.Vector3() };
+        }
+
         if (earthObj) {
-            earthObj.add(satelliteGroup);
-            const satGeo = new THREE.BoxGeometry(0.015, 0.015, 0.04);
-            const satMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9, roughness: 0.1 });
-            const panelMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, side: THREE.DoubleSide, roughness: 0.3, metalness: 0.6 });
+            earthObj.add(issGroup);
+            
+            const matWhite = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 });
+            const matMetal = new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 0.8, roughness: 0.4 });
+            const matSolar = new THREE.MeshStandardMaterial({ color: 0x0a1c3a, metalness: 0.8, roughness: 0.3, side: THREE.DoubleSide });
+            
+            const truss = new THREE.Mesh(new THREE.CylinderGeometry(0.0015, 0.0015, 0.12, 8), matMetal);
+            truss.rotation.z = Math.PI / 2;
+            issGroup.add(truss);
+            
+            const truss2 = new THREE.Mesh(new THREE.CylinderGeometry(0.001, 0.001, 0.12, 6), matMetal);
+            truss2.rotation.z = Math.PI / 2;
+            truss2.position.set(0, 0.003, 0);
+            issGroup.add(truss2);
+            
+            const modulesData = [
+                { r: 0.004, l: 0.03, pos: [0, -0.005, 0], rot: [Math.PI/2, 0, 0] },
+                { r: 0.003, l: 0.025, pos: [0.01, -0.005, 0.01], rot: [Math.PI/2, 0, 0] },
+                { r: 0.003, l: 0.02, pos: [-0.01, -0.005, 0.008], rot: [Math.PI/2, 0, 0] },
+                { r: 0.002, l: 0.02, pos: [0, -0.01, 0], rot: [Math.PI/2, 0, 0] }
+            ];
+            for (let m of modulesData) {
+                const mod = new THREE.Mesh(new THREE.CylinderGeometry(m.r, m.r, m.l, 12), matWhite);
+                mod.position.set(...m.pos);
+                mod.rotation.set(...m.rot);
+                issGroup.add(mod);
+            }
+            
+            for (let i = 1; i <= 4; i++) {
+                const offset = i * 0.015;
+                
+                const wingR = new THREE.Group();
+                wingR.position.set(offset, 0, 0);
+                const panelR = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.04, 0.0005), matSolar);
+                panelR.position.y = 0.02;
+                wingR.add(panelR);
+                const panelR2 = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.04, 0.0005), matSolar);
+                panelR2.position.y = -0.02;
+                wingR.add(panelR2);
+                issGroup.add(wingR);
+                
+                const wingL = new THREE.Group();
+                wingL.position.set(-offset, 0, 0);
+                const panelL = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.04, 0.0005), matSolar);
+                panelL.position.y = 0.02;
+                wingL.add(panelL);
+                const panelL2 = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.04, 0.0005), matSolar);
+                panelL2.position.y = -0.02;
+                wingL.add(panelL2);
+                issGroup.add(wingL);
+            }
+            
             for (let i = 0; i < 3; i++) {
-                const sat = new THREE.Group();
-                const body = new THREE.Mesh(satGeo, satMat);
-                sat.add(body);
-                const panelL = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 0.03), panelMat);
-                panelL.position.x = 0.05;
-                sat.add(panelL);
-                const panelR = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 0.03), panelMat);
-                panelR.position.x = -0.05;
-                sat.add(panelR);
-                sat.userData = { orbitRadius: 0.6 + i * 0.18, speed: 0.8 + i * 0.4, angle: (i * Math.PI * 2) / 3, incl: (Math.random() - 0.5) * 1.2 };
-                satelliteGroup.add(sat);
+                const rad = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.008, 0.0005), matWhite);
+                rad.position.set(0, 0, 0.005 + i * 0.004);
+                rad.rotation.x = Math.PI / 2;
+                issGroup.add(rad);
+            }
+            
+            const armGroup = new THREE.Group();
+            const armSeg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.0008, 0.0008, 0.03, 6), matWhite);
+            armSeg1.position.y = 0.015;
+            armGroup.add(armSeg1);
+            const armSeg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.0008, 0.0008, 0.03, 6), matWhite);
+            armSeg2.position.set(0.015, 0.03, 0);
+            armSeg2.rotation.z = -Math.PI / 4;
+            armGroup.add(armSeg2);
+            armGroup.position.set(0.02, -0.005, 0.005);
+            issGroup.add(armGroup);
+            
+            for (let i = 0; i < 2; i++) {
+                const astro = createAstronaut();
+                const g = astro.group;
+                g.position.set((Math.random() - 0.5) * 0.05, (Math.random() - 0.5) * 0.05, (Math.random() - 0.5) * 0.03);
+                issGroup.add(g);
+                issGroup.add(astro.tether);
+                
+                astro.targetPos.copy(g.position);
+                astro.state = astronautStates[Math.floor(Math.random() * astronautStates.length)];
+                astro.timer = 2 + Math.random() * 3;
+                astronauts.push(astro);
             }
         }
 
@@ -1666,13 +1783,79 @@
             const ci = 6.5 + Math.sin(ts * 3.2) * 0.25;
             sunCoronaInner.scale.set(ci, ci, 1);
 
-            if (satelliteGroup) {
-                for (const sat of satelliteGroup.children) {
-                    sat.userData.angle += sat.userData.speed * 0.01 * speedMult;
-                    const ra = sat.userData.angle;
-                    const r = sat.userData.orbitRadius;
-                    sat.position.set(Math.cos(ra) * r, Math.sin(ra) * r * Math.sin(sat.userData.incl), Math.sin(ra) * r * Math.cos(sat.userData.incl));
-                    sat.rotation.y = -ra;
+            // ISS & Astronauts animation
+            if (issGroup) {
+                issGroup.children.forEach(child => {
+                    if (child.children.length === 2 && child.children[0].material && child.children[0].material.color.getHex() === 0x0a1c3a) {
+                        child.rotation.y += 0.001 * speedMult;
+                    }
+                });
+
+                for (let astro of astronauts) {
+                    astro.timer -= 0.016;
+                    const g = astro.group;
+                    
+                    if (astro.timer <= 0) {
+                        let newState = astro.state;
+                        while (newState === astro.state) {
+                            newState = astronautStates[Math.floor(Math.random() * astronautStates.length)];
+                        }
+                        astro.state = newState;
+                        astro.timer = 3 + Math.random() * 4;
+                        
+                        if (astro.state === 'float') {
+                            astro.targetPos.set(
+                                (Math.random() - 0.5) * 0.06,
+                                (Math.random() - 0.5) * 0.06,
+                                (Math.random() - 0.5) * 0.04
+                            );
+                        }
+                    }
+                    
+                    astro.tetherPos[0] = g.position.x;
+                    astro.tetherPos[1] = g.position.y;
+                    astro.tetherPos[2] = g.position.z;
+                    astro.tetherPos[3] = 0;
+                    astro.tetherPos[4] = 0;
+                    astro.tetherPos[5] = 0;
+                    astro.tether.geometry.attributes.position.needsUpdate = true;
+                    
+                    if (astro.state === 'float') {
+                        g.position.lerp(astro.targetPos, 0.02);
+                        g.rotation.x += 0.005;
+                        g.rotation.y += 0.008;
+                        astro.armL.rotation.z = Math.PI / 4;
+                        astro.armR.rotation.z = -Math.PI / 4;
+                    } else if (astro.state === 'repair') {
+                        g.rotation.x = 0;
+                        g.rotation.y = 0;
+                        astro.armL.rotation.z = Math.PI / 4 + Math.sin(nowMs * 0.01) * 0.5;
+                        astro.armR.rotation.z = -Math.PI / 4 - Math.sin(nowMs * 0.01) * 0.5;
+                        g.position.lerp(new THREE.Vector3(0.01, -0.01, 0.01), 0.01);
+                    } else if (astro.state === 'spin') {
+                        g.rotation.y += 0.05;
+                        astro.armL.rotation.z = Math.PI / 2;
+                        astro.armR.rotation.z = -Math.PI / 2;
+                    } else if (astro.state === 'photo') {
+                        g.rotation.x = 0;
+                        g.rotation.y = 0;
+                        astro.armL.rotation.z = Math.PI / 3;
+                        astro.armR.rotation.z = -Math.PI / 3;
+                        astro.armR.rotation.x = Math.PI / 2;
+                        astro.armL.rotation.x = Math.PI / 2;
+                        g.position.lerp(new THREE.Vector3(-0.03, 0.02, 0.02), 0.01);
+                    } else if (astro.state === 'check_tether') {
+                        g.rotation.x = 0;
+                        g.rotation.y = 0;
+                        astro.armL.rotation.z = Math.PI / 2;
+                        astro.armR.rotation.z = -Math.PI / 4;
+                        g.position.lerp(new THREE.Vector3(0, 0, 0.03), 0.01);
+                    } else if (astro.state === 'wave') {
+                        g.rotation.x = 0;
+                        g.rotation.y = 0;
+                        astro.armR.rotation.z = -Math.PI / 2 + Math.sin(nowMs * 0.02) * 0.5;
+                        astro.armL.rotation.z = Math.PI / 4;
+                    }
                 }
             }
 
