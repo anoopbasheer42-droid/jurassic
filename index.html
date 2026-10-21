@@ -1,14 +1,4 @@
-I see exactly what happened! Your Earth and Moon lost their textures because the app was trying to load them from a raw GitHub server that blocked the connection (CORS issue or rate limit). Because it failed, it fell back to the basic "programmer art" canvas texture, and the lighting made the dark side completely black (that's why it looks "cold" and shadowy).
 
-I have fixed it by:
-
-1. Moving all Earth, Cloud, and Moon textures to the official Three.js server (which never blocks requests and loads instantly).
-2. Adding a "Camera Fill Light" so the dark side of the Earth is always illuminated and looks like a beautiful blue marble, even when the sun is behind it.
-3. Fixing the Cloud map so the clouds rotate over the continents smoothly again.
-
-Replace your entire code with this fixed version:
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
