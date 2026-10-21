@@ -799,78 +799,105 @@
         }
 
         // ============================================================
-        // REALISTIC LIVELY SPACE BACKGROUND
+        // FIXED DEEP SPACE BACKGROUND
         // ============================================================
         const milkyWayGroup = new THREE.Group();
         scene.add(milkyWayGroup);
 
-        // 1. Deep Void Stars (Massive, slow-moving background)
-        (function buildDeepVoidStars() {
-            const N = 20000; 
-            const positions = new Float32Array(N * 3);
+        // 1. Massive Galactic Disk (The core Milky Way band)
+        (function buildGalacticDisk() {
+            const N = 30000;
+            const pos = new Float32Array(N * 3);
             const colors = new Float32Array(N * 3);
             for (let i = 0; i < N; i++) {
-                const r = 1500 + Math.random() * 3000; 
-                const theta = Math.random() * Math.PI * 2; 
+                const radius = 1000 + Math.random() * 3000;
+                const angle = Math.random() * Math.PI * 2;
+                const height = (Math.random() - 0.5) * 200; 
+
+                pos[i*3] = Math.cos(angle) * radius;
+                pos[i*3+1] = height;
+                pos[i*3+2] = Math.sin(angle) * radius;
+
+                const col = new THREE.Color().setHSL(0.6 + Math.random()*0.2, 0.5, 0.5 + Math.random()*0.5);
+                colors[i*3] = col.r; colors[i*3+1] = col.g; colors[i*3+2] = col.b;
+            }
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            const mat = new THREE.PointsMaterial({
+                size: 3,
+                map: makeCircularStarTexture('rgba(255,255,255,0.8)'),
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.7,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            });
+            const disk = new THREE.Points(g, mat);
+            disk.rotation.x = Math.PI * 0.2;
+            disk.rotation.z = Math.PI * 0.1;
+            milkyWayGroup.add(disk);
+        })();
+
+        // 2. Bright Foreground Stars (Dense and lively)
+        (function buildBrightStars() {
+            const N = 20000;
+            const pos = new Float32Array(N * 3);
+            const colors = new Float32Array(N * 3);
+            for (let i = 0; i < N; i++) {
+                const r = 300 + Math.random() * 800;
+                const theta = Math.random() * Math.PI * 2;
                 const phi = Math.acos(2 * Math.random() - 1);
-                positions[i*3] = r * Math.sin(phi) * Math.cos(theta); 
-                positions[i*3+1] = r * Math.sin(phi) * Math.sin(theta); 
-                positions[i*3+2] = r * Math.cos(phi);
-                
+                pos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+                pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+                pos[i*3+2] = r * Math.cos(phi);
+
                 // Random star colors (blue, yellow, red, white)
-                const col = new THREE.Color().setHSL(0.6 - Math.random()*0.3, 0.8, 0.7 + Math.random()*0.3);
+                const col = new THREE.Color().setHSL(Math.random() > 0.5 ? 0.6 : 0.1, 0.8, 0.8);
                 colors[i*3] = col.r; colors[i*3+1] = col.g; colors[i*3+2] = col.b;
             }
-            const g = new THREE.BufferGeometry(); 
-            g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
             g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            const mat = new THREE.PointsMaterial({ size: 2.5, map: makeCircularStarTexture('rgba(255,255,255,0.8)'), vertexColors: true, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending });
+            const mat = new THREE.PointsMaterial({
+                size: 4,
+                map: makeCircularStarTexture('rgba(255,255,255,1)'),
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            });
             milkyWayGroup.add(new THREE.Points(g, mat));
         })();
 
-        // 2. Closer Detail Stars (Brighter, larger)
-        (function buildDetailStars() {
-            const N = 8000; 
-            const positions = new Float32Array(N * 3);
-            const colors = new Float32Array(N * 3);
-            for (let i = 0; i < N; i++) {
-                const r = 800 + Math.random() * 800; 
-                const theta = Math.random() * Math.PI * 2; 
-                const phi = Math.acos(2 * Math.random() - 1);
-                positions[i*3] = r * Math.sin(phi) * Math.cos(theta); 
-                positions[i*3+1] = r * Math.sin(phi) * Math.sin(theta); 
-                positions[i*3+2] = r * Math.cos(phi);
-                const col = new THREE.Color().setHSL(0.6 - Math.random()*0.3, 0.9, 0.8);
-                colors[i*3] = col.r; colors[i*3+1] = col.g; colors[i*3+2] = col.b;
-            }
-            const g = new THREE.BufferGeometry(); 
-            g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            const mat = new THREE.PointsMaterial({ size: 4, map: makeCircularStarTexture('rgba(255,255,255,1)'), vertexColors: true, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending });
-            milkyWayGroup.add(new THREE.Points(g, mat));
-        })();
-
-        // 3. Deep Space Nebula Clouds (Adds the "lively" color depth)
+        // 3. Very Faint Far Nebulas (Adds color depth, no fog)
         (function buildNebula() {
-            const colors = [0x8b5cf6, 0x3b82f6, 0xa78bfa, 0x6366f1, 0xc4b5fd, 0x10b981];
-            for (let i = 0; i < 80; i++) {
-                const color = colors[Math.floor(Math.random()*colors.length)]; 
-                const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256; 
-                const ctx = canvas.getContext('2d'); 
-                const grd = ctx.createRadialGradient(128,128,0,128,128,128); 
-                const hex = '#' + color.toString(16).padStart(6,'0'); 
-                grd.addColorStop(0, hex + '60'); 
-                grd.addColorStop(0.5, hex + '15'); 
-                grd.addColorStop(1, hex + '00'); 
-                ctx.fillStyle = grd; ctx.fillRect(0, 0, 256, 256); 
-                const tex = new THREE.CanvasTexture(canvas); 
-                const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending })); 
-                const r = 300 + Math.random()*800; 
-                const theta = Math.random()*Math.PI*2; 
-                const phi = Math.acos(2*Math.random()-1); 
-                spr.position.set(r*Math.sin(phi)*Math.cos(theta), r*Math.sin(phi)*Math.sin(theta)*0.7, r*Math.cos(phi)); 
-                const s = 400 + Math.random()*600; 
-                spr.scale.set(s, s, 1); 
+            const colors = [0x8b5cf6, 0x3b82f6, 0xa78bfa, 0x6366f1, 0x10b981];
+            for (let i = 0; i < 15; i++) {
+                const color = colors[Math.floor(Math.random()*colors.length)];
+                const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                const grd = ctx.createRadialGradient(128,128,0,128,128,128);
+                const hex = '#' + color.toString(16).padStart(6,'0');
+                grd.addColorStop(0, hex + '30'); // Faint core
+                grd.addColorStop(0.5, hex + '08');
+                grd.addColorStop(1, hex + '00');
+                ctx.fillStyle = grd; ctx.fillRect(0, 0, 256, 256);
+                const tex = new THREE.CanvasTexture(canvas);
+                const spr = new THREE.Sprite(new THREE.SpriteMaterial({
+                    map: tex,
+                    transparent: true,
+                    opacity: 0.15, // Very transparent
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending
+                }));
+                const r = 1500 + Math.random()*1500; // Far away
+                const theta = Math.random()*Math.PI*2;
+                const phi = Math.acos(2*Math.random()-1);
+                spr.position.set(r*Math.sin(phi)*Math.cos(theta), r*Math.sin(phi)*Math.sin(theta)*0.7, r*Math.cos(phi));
+                const s = 1000 + Math.random()*1000;
+                spr.scale.set(s, s, 1);
                 milkyWayGroup.add(spr);
             }
         })();
@@ -879,18 +906,16 @@
         const shootingStars = [];
         function createShootingStar() {
             const geo = new THREE.BufferGeometry();
-            const positions = new Float32Array([0, 0, 0, 0, 0, -15]); // Line segment
+            const positions = new Float32Array([0, 0, 0, 0, 0, -15]); 
             geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             const mat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1, blending: THREE.AdditiveBlending });
             const line = new THREE.Line(geo, mat);
             
-            // Random start position high up
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.acos(2 * Math.random() - 1);
             const r = 600 + Math.random() * 400;
             line.position.set(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
             
-            // Random direction
             const dir = new THREE.Vector3((Math.random()-0.5)*2, (Math.random()-0.5)*2, (Math.random()-0.5)*2).normalize();
             line.lookAt(line.position.clone().add(dir));
             
@@ -1313,7 +1338,7 @@
             }
 
             // Shooting Stars Animation
-            if (Math.random() < 0.005) createShootingStar(); // 0.5% chance per frame
+            if (Math.random() < 0.005) createShootingStar();
             for (let i = shootingStars.length - 1; i >= 0; i--) {
                 const s = shootingStars[i];
                 s.mesh.position.addScaledVector(s.dir, s.speed);
