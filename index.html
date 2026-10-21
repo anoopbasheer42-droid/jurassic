@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>EUR/USD AI Pro Dashboard</title>
+    <title>EUR/USD AI Pro Dashboard — Millionaire Mode</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -52,9 +51,10 @@
         .dashboard { width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 16px; }
         header { display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0 20px 0; border-bottom: 1px solid rgba(139, 92, 246, 0.1); margin-bottom: 6px; }
         .logo-wrap { display: flex; flex-direction: column; gap: 6px; }
-        .logo { display: flex; align-items: baseline; gap: 8px; font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 700; letter-spacing: -0.03em; }
+        .logo { display: flex; align-items: baseline; gap: 8px; font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 700; letter-spacing: -0.03em; flex-wrap: wrap; }
         .logo .bolt { color: var(--purple); font-size: 1.1rem; filter: drop-shadow(0 0 10px rgba(139,92,246,0.8)); }
         .logo .accent { background: linear-gradient(135deg, #a78bfa, #8b5cf6, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 700; }
+        .mode-badge { display: inline-block; padding: 3px 8px; background: linear-gradient(135deg, #f59e0b, #ef4444); border-radius: 6px; font-size: 0.5rem; letter-spacing: 0.15em; font-weight: 700; color: white; margin-left: 4px; animation: pulse 2s infinite; text-transform: uppercase; }
         .ist-clock { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; }
         .price-wrap { text-align: right; }
         .price-ticker { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; color: var(--green); letter-spacing: -0.02em; line-height: 1; text-shadow: 0 0 25px rgba(16,185,129,0.4); font-variant-numeric: tabular-nums; }
@@ -62,7 +62,7 @@
         .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 22px 24px; backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); position: relative; overflow: hidden; box-shadow: var(--glow), inset 0 1px 0 rgba(255,255,255,0.05); transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .card:hover { box-shadow: 0 0 40px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255,255,255,0.08); }
         .card::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, transparent, rgba(167,139,250,0.4), transparent); }
-        .card-title { font-family: 'Space Grotesk', sans-serif; font-size: 0.68rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; }
+        .card-title { font-family: 'Space Grotesk', sans-serif; font-size: 0.68rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
         #canvas-container { width: 100%; height: 240px; position: relative; z-index: 1; display: flex; justify-content: center; align-items: center; touch-action: none; cursor: grab; }
         #canvas-container:active { cursor: grabbing; }
         #canvas-container.touched { filter: drop-shadow(0 0 25px rgba(167,139,250,0.7)); transition: filter 0.3s ease; }
@@ -84,7 +84,6 @@
             z-index: 100000; display: none; gap: 12px;
         }
         #map-exit.active { display: flex; animation: fadeIn 0.5s ease; }
-        .plane-icon { background: transparent; font-size: 20px; text-align: center; line-height: 20px; }
 
         .signal-card { text-align: center; padding: 30px 24px; }
         #signal-text { font-family: 'Space Grotesk', sans-serif; font-size: 2.8rem; font-weight: 700; letter-spacing: 0.08em; color: var(--text-subtle); transition: all 0.4s ease; margin-bottom: 12px; line-height: 1; text-shadow: 0 0 30px currentColor; }
@@ -103,6 +102,7 @@
         .btn.danger { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.25); color: #fca5a5; }
         .btn.primary { font-family: 'Space Grotesk', sans-serif; background: linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #3b82f6 100%); border: none; font-weight: 600; color: white; box-shadow: 0 4px 25px rgba(124,58,237,0.4), 0 0 0 1px rgba(255,255,255,0.1) inset; }
         .btn.primary:hover { box-shadow: 0 6px 35px rgba(124,58,237,0.6); transform: translateY(-1px); }
+        .btn:disabled, .btn[disabled] { opacity: 0.4; cursor: not-allowed; }
         .chat-card { border: 1px solid rgba(139, 92, 246, 0.4); box-shadow: 0 0 40px rgba(139, 92, 246, 0.15), inset 0 1px 0 rgba(255,255,255,0.1); }
         .chat-controls { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
         .panel { display: none; background: rgba(0,0,0,0.4); padding: 16px; border-radius: 12px; margin-bottom: 14px; font-size: 0.78rem; border: 1px solid rgba(139, 92, 246, 0.1); }
@@ -112,7 +112,7 @@
         .chat-history { height: 280px; overflow-y: auto; background: rgba(0,0,0,0.6); border-radius: 14px; padding: 14px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; border: 1px solid rgba(255,255,255,0.05); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
         .chat-history::-webkit-scrollbar { width: 4px; }
         .chat-history::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 4px; }
-        .msg { font-family: 'Inter', sans-serif; padding: 10px 14px; border-radius: 14px; max-width: 85%; line-height: 1.5; font-size: 0.82rem; animation: fadeIn 0.3s ease-out; }
+        .msg { font-family: 'Inter', sans-serif; padding: 10px 14px; border-radius: 14px; max-width: 85%; line-height: 1.5; font-size: 0.82rem; animation: fadeIn 0.3s ease-out; white-space: pre-wrap; }
         .msg.user { background: linear-gradient(135deg, #4f46e5, #3b82f6); color: white; align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 4px 20px rgba(59,130,246,0.3); }
         .msg.ai { background: rgba(139, 92, 246, 0.08); align-self: flex-start; border-left: 3px solid var(--purple); color: var(--text-body); border-top-left-radius: 4px; box-shadow: 0 4px 20px rgba(139, 92, 246, 0.1); }
         .msg.system { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); align-self: center; font-size: 0.7rem; text-align: center; color: #fbbf24; padding: 6px 12px; font-family: 'JetBrains Mono', monospace; }
@@ -134,6 +134,36 @@
         .fade-in { animation: fadeIn 0.3s ease-in; }
         .pulse-dot { display: inline-block; width: 6px; height: 6px; background: var(--green); border-radius: 50%; margin-right: 6px; box-shadow: 0 0 10px var(--green); animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        /* === NEWS CARD === */
+        .news-card { border: 1px solid rgba(239,68,68,0.25); }
+        .news-lock-banner { display: none; background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(245,158,11,0.15)); border: 1px solid rgba(239,68,68,0.5); border-radius: 14px; padding: 16px 18px; margin-bottom: 16px; animation: pulseLock 2s ease-in-out infinite; }
+        .news-lock-banner.active { display: block; animation: fadeIn 0.4s ease; }
+        .news-lock-banner h3 { font-family: 'Space Grotesk'; color: #fca5a5; font-size: 0.78rem; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; }
+        .news-lock-countdown { font-family: 'JetBrains Mono'; font-size: 1.4rem; font-weight: 700; color: #f87171; text-shadow: 0 0 20px rgba(239,68,68,0.6); }
+        .news-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(139,92,246,0.08); font-family: 'JetBrains Mono'; font-size: 0.72rem; gap: 8px; }
+        .news-item:last-child { border-bottom: none; }
+        .news-impact { padding: 2px 6px; border-radius: 4px; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; flex-shrink: 0; }
+        .news-impact.High { background: rgba(239,68,68,0.2); color: #fca5a5; }
+        .news-impact.Medium { background: rgba(245,158,11,0.2); color: #fbbf24; }
+        .news-impact.Low { background: rgba(139,92,246,0.15); color: #c4b5fd; }
+        .news-item-title { flex: 1; margin: 0 4px; color: var(--text-body); }
+        .news-item-time { color: var(--text-muted); font-size: 0.62rem; text-align: right; flex-shrink: 0; }
+
+        /* === MILLIONAIRE CARD === */
+        .millionaire-card { border: 1px solid rgba(245,158,11,0.35); background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(139,92,246,0.06)); }
+        .mil-progress { height: 10px; background: rgba(0,0,0,0.6); border-radius: 5px; overflow: hidden; margin: 10px 0 6px; border: 1px solid rgba(245,158,11,0.15); }
+        .mil-progress-bar { height: 100%; background: linear-gradient(90deg, #f59e0b, #10b981); border-radius: 5px; transition: width 0.8s ease; box-shadow: 0 0 12px rgba(245,158,11,0.5); min-width: 2px; }
+        .mil-goal { display: flex; justify-content: space-between; font-family: 'JetBrains Mono'; font-size: 0.72rem; color: var(--text-muted); }
+        .mil-goal span:last-child { color: var(--text-main); font-weight: 700; }
+        .mil-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+        .mil-stat { background: rgba(0,0,0,0.35); border: 1px solid rgba(245,158,11,0.1); border-radius: 8px; padding: 8px 6px; text-align: center; }
+        .mil-stat-label { font-family: 'JetBrains Mono'; font-size: 0.55rem; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+        .mil-stat-value { font-family: 'Space Grotesk'; font-size: 0.95rem; font-weight: 700; }
+        .mil-stat-value.win { color: var(--green); }
+        .mil-stat-value.loss { color: var(--red); }
+        .mil-stat-value.rate { color: var(--yellow); }
+        .mil-tip { margin-top: 14px; padding: 10px 12px; background: rgba(139,92,246,0.06); border-left: 3px solid var(--violet); border-radius: 6px; font-family: 'Inter'; font-size: 0.72rem; color: var(--text-muted); line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -144,7 +174,6 @@
             <button class="btn primary" style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100001;" onclick="closeStreetView()">Close Street View</button>
         </div>
         <div id="map-exit" class="active">
-            <button class="btn primary" onclick="flyToDubai()" id="btn-dubai" style="display: none;">Fly to Dubai ✈️</button>
             <button class="btn danger" onclick="exitMap()">Return to Space</button>
         </div>
     </div>
@@ -152,7 +181,10 @@
     <div class="dashboard">
         <header>
             <div class="logo-wrap">
-                <div class="logo"><span class="bolt">⚡</span><span>EUR/USD</span><span class="accent">AI PRO</span></div>
+                <div class="logo">
+                    <span class="bolt">⚡</span><span>EUR/USD</span><span class="accent">AI PRO</span>
+                    <span class="mode-badge" id="mode-badge">MILLIONAIRE</span>
+                </div>
                 <div class="ist-clock" id="ist-clock">IST —:—:—</div>
             </div>
             <div class="price-wrap">
@@ -160,6 +192,8 @@
                 <div class="last-updated" id="last-updated">AWAITING DATA</div>
             </div>
         </header>
+
+        <!-- SOLAR SYSTEM -->
         <div class="card">
             <div class="card-title">Solar System</div>
             <div id="canvas-container"></div>
@@ -171,6 +205,24 @@
                 <button class="btn speed-btn" data-speed="100" onclick="setOrbitSpeed(100)">100x</button>
             </div>
         </div>
+
+        <!-- NEWS CARD -->
+        <div class="card news-card">
+            <div class="card-title">
+                <span>📰 EUR/USD High-Impact News</span>
+                <button class="btn" onclick="fetchNews(true)">Refresh</button>
+            </div>
+            <div class="news-lock-banner" id="news-lock-banner">
+                <h3>🚨 News Lock Active — Signals Blocked</h3>
+                <div id="news-lock-detail"></div>
+            </div>
+            <div id="news-list" style="max-height: 230px; overflow-y: auto; padding-right: 4px;">
+                <div style="font-family: 'JetBrains Mono'; font-size: 0.75rem; color: var(--text-muted);">Loading news...</div>
+            </div>
+            <div class="signal-hint" style="margin-top: 12px;">Signals auto-blocked ±10 min around every High-impact USD/EUR event.</div>
+        </div>
+
+        <!-- SIGNAL CARD -->
         <div class="card signal-card">
             <div class="card-title">Current Signal</div>
             <div id="signal-text">AWAITING</div>
@@ -185,12 +237,37 @@
                 <div><span>ATR</span><span id="val-atr">—</span></div>
             </div>
             <div style="margin-top:24px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-                <button class="btn primary" onclick="askAIForSignal()">Ask AI for Signal</button>
+                <button class="btn primary" onclick="askAIForSignal()" id="btn-ask-signal">Ask AI for Signal</button>
                 <button class="btn" onclick="playVoiceReport()">Play Voice</button>
                 <button class="btn danger" onclick="stopVoice()">Stop</button>
             </div>
-            <div class="signal-hint">Engine scans every 1:00 · AI runs only when you ask</div>
+            <div class="signal-hint">Engine scans every 1:00 · AI runs only when you ask · Blocked during news</div>
         </div>
+
+        <!-- MILLIONAIRE CARD -->
+        <div class="card millionaire-card">
+            <div class="card-title">
+                <span>💰 Mission: $100 → $1,000,000</span>
+                <button class="btn active" onclick="toggleMillionaireMode()" id="mil-toggle">ON</button>
+            </div>
+            <div class="mil-goal"><span>Current Capital</span><span id="mil-current">$100.00</span></div>
+            <div class="mil-progress"><div class="mil-progress-bar" id="mil-bar" style="width:0.01%"></div></div>
+            <div class="mil-goal"><span>Goal</span><span>$1,000,000</span></div>
+            <div class="mil-stats">
+                <div class="mil-stat"><div class="mil-stat-label">Win Rate</div><div class="mil-stat-value rate" id="mil-winrate">—</div></div>
+                <div class="mil-stat"><div class="mil-stat-label">Trades</div><div class="mil-stat-value" id="mil-trades">0</div></div>
+                <div class="mil-stat"><div class="mil-stat-label">Wins</div><div class="mil-stat-value win" id="mil-wins">0</div></div>
+                <div class="mil-stat"><div class="mil-stat-label">Losses</div><div class="mil-stat-value loss" id="mil-losses">0</div></div>
+            </div>
+            <div style="margin-top:14px; display:flex; gap:6px;">
+                <input type="number" id="mil-capital-input" placeholder="Starting capital $" style="flex:1; padding:8px; border-radius:8px; border:1px solid rgba(139,92,246,0.2); background:rgba(0,0,0,0.4); color:white; font-family:'JetBrains Mono'; font-size:0.75rem;">
+                <button class="btn" onclick="saveMillionaireCapital()">Save</button>
+                <button class="btn danger" onclick="resetSignalHistory()">Reset</button>
+            </div>
+            <div class="mil-tip" id="mil-tip">💡 Honest truth: no trader has 90% win rate. Real edge = 1:2+ RR with 45-55% accuracy, compounded 1-2% per trade. This is the actual millionaire path.</div>
+        </div>
+
+        <!-- CHAT -->
         <div class="card chat-card">
             <div class="card-title">Ask Your AI Trader
                 <div class="chat-controls">
@@ -242,7 +319,6 @@
                 </select>
                 <button class="btn" style="margin-top:12px; width:100%;" onclick="testCloudVoice()">Test Cloud Voice</button>
                 <button class="btn" style="margin-top:8px; width:100%;" onclick="fallbackSpeakText('Testing browser voice directly. If you hear this, the system works perfectly.')">Test Browser Voice Directly</button>
-                <div style="font-size:0.7rem; color:var(--text-muted); margin-top:8px;">If the premium voice fails, it will immediately fall back to your device's browser voice.</div>
             </div>
             <div class="panel" id="panel-key">
                 <strong>Groq API Key (primary AI)</strong>
@@ -255,18 +331,20 @@
                 <button class="btn" style="margin-top:10px;" onclick="saveApiKey()">Save Gemini Key</button>
             </div>
             <div class="chat-history" id="chat-history">
-                <div class="msg ai fade-in"><span class="pulse-dot"></span>Hey Boss. I'm locked onto the charts. What are we looking at on EUR/USD today?</div>
+                <div class="msg ai fade-in"><span class="pulse-dot"></span>Boss — Millionaire Mode is ON. I'm tracking news, blocking trades during high-impact events, and my only mission is compounding your capital. Ask me anything about EUR/USD, and I'll check every timeframe before I answer.</div>
             </div>
             <div class="chat-input-row">
-                <input type="text" id="chat-input" placeholder="Talk to your trader, Boss..." onkeypress="if(event.key==='Enter') sendChat()">
+                <input type="text" id="chat-input" placeholder="Ask Alex anything, Boss..." onkeypress="if(event.key==='Enter') sendChat()">
                 <button onclick="sendChat()">Send</button>
             </div>
             <div style="text-align:right; margin-top:10px;"><button class="btn" onclick="clearChat()">Clear chat (memory stays)</button></div>
         </div>
+
         <div class="card">
             <div class="card-title">Boss's Wisdom Corner</div>
             <div class="reasoning-text" id="wise-words">Loading...</div>
         </div>
+
         <div class="card">
             <div class="card-title">Live Market Data — No AI Quota Used</div>
             <div class="stats-grid">
@@ -281,23 +359,32 @@
                 <div id="val-candle-4h">—</div>
             </div>
         </div>
+
         <div class="card">
             <div class="card-title">Engine Alerts — Last 5</div>
             <div id="alert-log">No alerts yet. Engine scanning...</div>
         </div>
+
         <div class="card">
             <div class="card-title">AI Trader's Reasoning</div>
             <div class="reasoning-text" id="val-reason">Engine scanning. AI analyzes only when you ask.</div>
         </div>
     </div>
+
     <script>
+        // ============================================================
+        // CONFIG
+        // ============================================================
         const GROQ_MODELS = ['meta-llama/llama-4-scout-17b-16e-instruct','llama-3.3-70b-versatile','openai/gpt-oss-120b'];
         const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-        const GEMINI_MODELS = ['gemini-3.8-flash','gemini-flash-latest','gemini-2.5-flash'];
-        const MARKET_KEYWORDS = ['market','buy','sell','trade','signal','entry','sl','tp','stop loss','take profit','setup','chart','trend','support','resistance','eur/usd','eurusd','should i','analysis','long','short','position','pip','bullish','bearish','candle','indicator','rsi','ema','atr','scalp','day trade'];
-        const LOCAL_QUOTES = ["Discipline beats conviction every single time...", "Every loss is just expensive tuition, Boss...", "Protect your capital like your life depends on it...", "Cut losses short and let the winners run...", "A calm mind catches more pips than a frantic one...", "You don't need to be right on every trade...", "The trend is your friend until it suddenly punches you...", "Patience isn't waiting, it's knowing when to strike...", "The market rewards preparation, not hope...", "Trade like a sniper, not machine gunner..."];
+        const GEMINI_MODELS = ['gemini-flash-latest','gemini-2.5-flash','gemini-2.0-flash'];
+        const MARKET_KEYWORDS = ['market','buy','sell','trade','signal','entry','sl','tp','stop loss','take profit','setup','chart','trend','support','resistance','eur/usd','eurusd','should i','analysis','long','short','position','pip','bullish','bearish','candle','indicator','rsi','ema','atr','scalp','day trade','news','nfp','fomc','cpi','million','compound'];
+        const LOCAL_QUOTES = ["Discipline beats conviction every single time...", "Every loss is just expensive tuition, Boss...", "Protect your capital like your life depends on it...", "Cut losses short and let the winners run...", "A calm mind catches more pips than a frantic one...", "You don't need to be right on every trade...", "The trend is your friend until it suddenly punches you...", "Patience isn't waiting, it's knowing when to strike...", "The market rewards preparation, not hope...", "Trade like a sniper, not machine gunner...", "Compound interest is the eighth wonder of the world...", "The market pays the patient, punishes the greedy..."];
         const LOCAL_JOKES = ["Why don't traders ever play hide and seek? Because good support levels are impossible to find...", "I told my wife I was a professional forex trader... she told me to clean the kitchen instead.", "My stop loss is remarkably similar to my ex—it gets hit when I least expect it.", "What's the difference between a forex trader and a large pizza? A pizza can feed a family of four."];
 
+        // ============================================================
+        // STATE
+        // ============================================================
         let globalData = null, personalContext = null, marketData = null;
         let webSearchEnabled = false, deepThinkEnabled = true, isSpeaking = false, chatInProgress = false;
         let chatHistory = JSON.parse(localStorage.getItem('eurusd_chat_history') || '[]');
@@ -315,8 +402,19 @@
         let voiceEngineMode = localStorage.getItem('eurusd_voice_engine_mode') || 'cloud';
         let currentAudio = null;
 
+        // NEWS / MILLIONAIRE STATE
+        let newsEvents = [];
+        let newsLastFetched = 0;
+        let millionaireMode = localStorage.getItem('eurusd_millionaire_mode') !== 'off';
+        let startingCapital = parseFloat(localStorage.getItem('eurusd_starting_capital') || '100');
+        let currentCapital = parseFloat(localStorage.getItem('eurusd_current_capital') || String(startingCapital));
+        let signalHistory = JSON.parse(localStorage.getItem('eurusd_signal_history') || '[]');
+
         document.body.addEventListener('click', () => { if ('speechSynthesis' in window) window.speechSynthesis.getVoices(); }, { once: true });
 
+        // ============================================================
+        // CLOCK
+        // ============================================================
         function updateISTClock() {
             const istTime = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false });
             const el = document.getElementById('ist-clock');
@@ -336,6 +434,250 @@
             el.innerText = pool[Math.floor(Math.random() * pool.length)];
         }
 
+        // ============================================================
+        // NEWS ENGINE
+        // ============================================================
+        const FF_URL = 'https://nfs.faireconomy.media/ff_calendar_thisweek.json';
+        const FF_PROXY = 'https://api.codetabs.com/v1/proxy?quest=';
+
+        async function fetchNews(force) {
+            if (!force && Date.now() - newsLastFetched < 30 * 60 * 1000) {
+                renderNews();
+                checkNewsLockUI();
+                return;
+            }
+            try {
+                let res = await fetch(FF_URL, { signal: AbortSignal.timeout(15000) });
+                if (!res.ok) throw new Error(`Direct failed: ${res.status}`);
+                const data = await res.json();
+                processNewsData(data);
+            } catch (e) {
+                try {
+                    const res = await fetch(FF_PROXY + encodeURIComponent(FF_URL), { signal: AbortSignal.timeout(20000) });
+                    if (!res.ok) throw new Error(`Proxy failed: ${res.status}`);
+                    const data = await res.json();
+                    processNewsData(data);
+                } catch (e2) {
+                    console.error("News fetch error:", e, e2);
+                    const el = document.getElementById('news-list');
+                    if (el) el.innerHTML = '<div style="color:var(--text-muted); font-family:JetBrains Mono; font-size:0.72rem;">News feed temporarily unavailable. Retrying in 30 min.</div>';
+                }
+            }
+        }
+
+        function processNewsData(data) {
+            const now = Date.now();
+            const cutoff = now - 60 * 60 * 1000;
+            newsEvents = (Array.isArray(data) ? data : [])
+                .filter(e => ['USD', 'EUR'].includes(e.country))
+                .map(e => ({
+                    title: e.title,
+                    country: e.country,
+                    impact: e.impact || 'Low',
+                    timestamp: new Date(e.date).getTime(),
+                    forecast: e.forecast || '',
+                    previous: e.previous || ''
+                }))
+                .filter(e => !isNaN(e.timestamp) && e.timestamp > cutoff)
+                .sort((a, b) => a.timestamp - b.timestamp);
+            newsLastFetched = Date.now();
+            renderNews();
+            checkNewsLockUI();
+        }
+
+        function renderNews() {
+            const el = document.getElementById('news-list');
+            if (!el) return;
+            if (!newsEvents || newsEvents.length === 0) {
+                el.innerHTML = '<div style="color:var(--text-muted); font-family:JetBrains Mono; font-size:0.72rem;">No upcoming EUR/USD events found.</div>';
+                return;
+            }
+            const now = Date.now();
+            let html = '';
+            for (const evt of newsEvents.slice(0, 15)) {
+                const dt = new Date(evt.timestamp);
+                const timeStr = dt.toLocaleString('en-IN', {timeZone:'Asia/Kolkata', weekday:'short', hour:'2-digit', minute:'2-digit', hour12:false});
+                const diff = evt.timestamp - now;
+                let timeLabel = timeStr + ' IST';
+                if (diff > 0) {
+                    const hrs = Math.floor(diff / 3600000);
+                    const mins = Math.floor((diff % 3600000) / 60000);
+                    timeLabel += ` · in ${hrs}h ${mins}m`;
+                } else if (diff > -3600000) {
+                    const minsAgo = Math.floor(-diff / 60000);
+                    timeLabel += ` · ${minsAgo}m ago`;
+                }
+                html += `<div class="news-item">
+                    <span class="news-impact ${evt.impact}">${evt.impact}</span>
+                    <span class="news-item-title">${evt.country} · ${evt.title}</span>
+                    <span class="news-item-time">${timeLabel}</span>
+                </div>`;
+            }
+            el.innerHTML = html;
+        }
+
+        function isNewsLockActive() {
+            const now = Date.now();
+            const lockWindow = 10 * 60 * 1000;
+            if (!Array.isArray(newsEvents)) return null;
+            for (const evt of newsEvents) {
+                if (evt.impact !== 'High') continue;
+                if (now >= evt.timestamp - lockWindow && now <= evt.timestamp + lockWindow) {
+                    return evt;
+                }
+            }
+            return null;
+        }
+
+        function checkNewsLockUI() {
+            const banner = document.getElementById('news-lock-banner');
+            const detail = document.getElementById('news-lock-detail');
+            const btnAsk = document.getElementById('btn-ask-signal');
+            if (!banner) return;
+            const lock = isNewsLockActive();
+            if (lock) {
+                banner.classList.add('active');
+                const now = Date.now();
+                const diff = lock.timestamp - now;
+                let countdown;
+                if (diff > 0) {
+                    const m = Math.floor(diff / 60000), s = Math.floor((diff % 60000) / 1000);
+                    countdown = `Event in ${m}m ${s}s`;
+                } else {
+                    const m = Math.floor(-diff / 60000), s = Math.floor((-diff % 60000) / 1000);
+                    countdown = `Event live · ${m}m ${s}s until unlock`;
+                }
+                detail.innerHTML = `<div style="font-family:'JetBrains Mono'; font-size:0.82rem; color:#fca5a5; margin-bottom:6px;">${lock.country} · ${lock.title}</div>
+                    <div class="news-lock-countdown">${countdown}</div>
+                    <div style="font-family:'JetBrains Mono'; font-size:0.68rem; color:var(--text-muted); margin-top:6px;">⚠️ Signals blocked ±10 minutes. Stay flat. Protect capital.</div>`;
+                if (btnAsk) btnAsk.disabled = true;
+            } else {
+                banner.classList.remove('active');
+                if (btnAsk) btnAsk.disabled = false;
+            }
+        }
+        setInterval(checkNewsLockUI, 1000);
+        setInterval(renderNews, 60000);
+
+        // ============================================================
+        // MILLIONAIRE TRACKER
+        // ============================================================
+        function toggleMillionaireMode() {
+            millionaireMode = !millionaireMode;
+            localStorage.setItem('eurusd_millionaire_mode', millionaireMode ? 'on' : 'off');
+            const btn = document.getElementById('mil-toggle');
+            if (btn) {
+                btn.innerText = millionaireMode ? 'ON' : 'OFF';
+                btn.classList.toggle('active', millionaireMode);
+            }
+            updateModeBadge();
+        }
+
+        function updateModeBadge() {
+            const b = document.getElementById('mode-badge');
+            if (b) b.style.display = millionaireMode ? 'inline-block' : 'none';
+        }
+
+        function saveMillionaireCapital() {
+            const v = parseFloat(document.getElementById('mil-capital-input').value);
+            if (!isNaN(v) && v > 0) {
+                startingCapital = v;
+                currentCapital = v;
+                localStorage.setItem('eurusd_starting_capital', String(v));
+                localStorage.setItem('eurusd_current_capital', String(v));
+                updateMillionaireProgress();
+                alert(`Capital reset to $${v.toFixed(2)}. Fresh start — let's compound.`);
+            }
+        }
+
+        function updateMillionaireProgress() {
+            const bar = document.getElementById('mil-bar');
+            const cur = document.getElementById('mil-current');
+            if (cur) cur.innerText = '$' + currentCapital.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+            if (bar) {
+                const pct = Math.min(100, (currentCapital / 1000000) * 100);
+                bar.style.width = Math.max(0.01, pct) + '%';
+            }
+        }
+
+        function recordSignal(sig) {
+            if (!sig || !sig.signal || sig.signal === 'HOLD') return;
+            const entry = parseFloat(sig.entry);
+            const sl = parseFloat(sig.sl);
+            const tp = parseFloat(sig.tp);
+            if (isNaN(entry) || isNaN(sl) || isNaN(tp)) return;
+            const active = signalHistory.find(s => !s.result);
+            if (active) return;
+            const record = {
+                id: Date.now(),
+                timestamp: Date.now(),
+                signal: sig.signal,
+                entry, sl, tp,
+                result: null,
+                closedAt: null,
+                closedPrice: null
+            };
+            signalHistory.push(record);
+            if (signalHistory.length > 200) signalHistory = signalHistory.slice(-200);
+            localStorage.setItem('eurusd_signal_history', JSON.stringify(signalHistory));
+            renderWinRate();
+        }
+
+        function checkSignalOutcomes() {
+            if (!marketData || !marketData.currentPrice) return;
+            const price = marketData.currentPrice;
+            let changed = false;
+            for (const s of signalHistory) {
+                if (s.result) continue;
+                const age = Date.now() - s.timestamp;
+                if (s.signal === 'BUY') {
+                    if (price >= s.tp) { s.result = 'win'; s.closedAt = Date.now(); s.closedPrice = price; changed = true; currentCapital *= 1.02; }
+                    else if (price <= s.sl) { s.result = 'loss'; s.closedAt = Date.now(); s.closedPrice = price; changed = true; currentCapital *= 0.99; }
+                } else if (s.signal === 'SELL') {
+                    if (price <= s.tp) { s.result = 'win'; s.closedAt = Date.now(); s.closedPrice = price; changed = true; currentCapital *= 1.02; }
+                    else if (price >= s.sl) { s.result = 'loss'; s.closedAt = Date.now(); s.closedPrice = price; changed = true; currentCapital *= 0.99; }
+                }
+                if (!s.result && age > 6 * 3600 * 1000) {
+                    s.result = 'expired'; s.closedAt = Date.now(); s.closedPrice = price; changed = true;
+                }
+            }
+            if (changed) {
+                localStorage.setItem('eurusd_signal_history', JSON.stringify(signalHistory));
+                localStorage.setItem('eurusd_current_capital', String(currentCapital));
+                renderWinRate();
+                updateMillionaireProgress();
+            }
+        }
+
+        function renderWinRate() {
+            const closed = signalHistory.filter(s => s.result === 'win' || s.result === 'loss');
+            const wins = closed.filter(s => s.result === 'win').length;
+            const losses = closed.filter(s => s.result === 'loss').length;
+            const total = wins + losses;
+            const rate = total > 0 ? ((wins / total) * 100).toFixed(1) : '—';
+            const wr = document.getElementById('mil-winrate');
+            const tr = document.getElementById('mil-trades');
+            const wn = document.getElementById('mil-wins');
+            const ls = document.getElementById('mil-losses');
+            if (wr) wr.innerText = total > 0 ? rate + '%' : '—';
+            if (tr) tr.innerText = total;
+            if (wn) wn.innerText = wins;
+            if (ls) ls.innerText = losses;
+        }
+
+        function resetSignalHistory() {
+            if (!confirm("Reset all trade stats and capital back to starting amount?")) return;
+            signalHistory = [];
+            currentCapital = startingCapital;
+            localStorage.setItem('eurusd_signal_history', '[]');
+            localStorage.setItem('eurusd_current_capital', String(currentCapital));
+            renderWinRate();
+            updateMillionaireProgress();
+        }
+
+        // ============================================================
+        // WEB SEARCH
+        // ============================================================
         async function searchWeb(query) {
             try {
                 const currencyMatch = query.match(/([A-Z]{3})\s*(?:to|in|for|of)\s*([A-Z]{3})/i);
@@ -373,9 +715,7 @@
                     const html = await scrapeRes.text();
                     const snippetRegex = /<a class="result__snippet"[^>]*>(.*?)<\/a>/g;
                     const titleRegex = /<a class="result__a"[^>]*>(.*?)<\/a>/g;
-                    let match;
-                    let snippets = [];
-                    let titles = [];
+                    let match, snippets = [], titles = [];
                     while ((match = snippetRegex.exec(html)) !== null) snippets.push(match[1].replace(/<[^>]*>?/gm, '').trim());
                     while ((match = titleRegex.exec(html)) !== null) titles.push(match[1].replace(/<[^>]*>?/gm, '').trim());
                     if (snippets.length > 0) {
@@ -393,188 +733,22 @@
             }
         }
 
-        // === AUDIO ENGINE ===
+        // ============================================================
+        // AUDIO ENGINE
+        // ============================================================
         let audioCtx = null;
-        let chargeOsc1 = null, chargeOsc2 = null, chargeGain = null, chargeTickGain = null, chargeTickOsc = null;
         function initAudio() {
             if (!audioCtx) {
                 try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-                catch(e) { console.warn("AudioContext not supported"); return null; }
+                catch(e) { return null; }
             }
             if (audioCtx.state === 'suspended') audioCtx.resume();
             return audioCtx;
         }
-        function startChargeSound() {
-            const ctx = initAudio();
-            if (!ctx) return;
-            stopChargeSound();
-            chargeOsc1 = ctx.createOscillator(); chargeOsc1.type = 'sawtooth'; chargeOsc1.frequency.value = 60;
-            chargeOsc2 = ctx.createOscillator(); chargeOsc2.type = 'sine'; chargeOsc2.frequency.value = 120;
-            chargeGain = ctx.createGain(); chargeGain.gain.value = 0.001;
-            const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 800;
-            chargeOsc1.connect(filter); chargeOsc2.connect(filter); filter.connect(chargeGain); chargeGain.connect(ctx.destination);
-            chargeTickOsc = ctx.createOscillator(); chargeTickOsc.type = 'square'; chargeTickOsc.frequency.value = 4;
-            chargeTickGain = ctx.createGain(); chargeTickGain.gain.value = 0;
-            chargeTickOsc.connect(chargeTickGain); chargeTickGain.connect(chargeGain.gain);
-            const now = ctx.currentTime;
-            chargeOsc1.start(now); chargeOsc2.start(now); chargeTickOsc.start(now);
-        }
-        function updateChargeSound(level) {
-            if (!audioCtx || !chargeOsc1 || !chargeGain) return;
-            const ctx = audioCtx; const now = ctx.currentTime;
-            const volume = 0.02 + level * 0.25;
-            chargeGain.gain.linearRampToValueAtTime(volume, now + 0.05);
-            chargeOsc1.frequency.linearRampToValueAtTime(60 + level * 160, now + 0.05);
-            chargeOsc2.frequency.linearRampToValueAtTime(120 + level * 320, now + 0.05);
-            if (chargeTickOsc && chargeTickGain) {
-                chargeTickOsc.frequency.linearRampToValueAtTime(4 + level * 30, now + 0.05);
-                chargeTickGain.gain.linearRampToValueAtTime(level > 0.3 ? level * 0.15 : 0, now + 0.05);
-            }
-        }
-        function stopChargeSound() {
-            try {
-                if (chargeOsc1) { chargeOsc1.stop(); chargeOsc1.disconnect(); }
-                if (chargeOsc2) { chargeOsc2.stop(); chargeOsc2.disconnect(); }
-                if (chargeTickOsc) { chargeTickOsc.stop(); chargeTickOsc.disconnect(); }
-                if (chargeTickGain) chargeTickGain.disconnect();
-                if (chargeGain) chargeGain.disconnect();
-            } catch(e) {}
-            chargeOsc1 = chargeOsc2 = chargeTickOsc = chargeGain = chargeTickGain = null;
-        }
-        function fadeOutChargeSound(durationSec = 0.5) {
-            if (!audioCtx || !chargeGain) { stopChargeSound(); return; }
-            try {
-                const now = audioCtx.currentTime;
-                const gain = chargeGain.gain;
-                const currentVal = gain.value;
-                gain.cancelScheduledValues(now);
-                gain.setValueAtTime(currentVal, now);
-                gain.linearRampToValueAtTime(0.001, now + durationSec);
-                if (chargeTickGain) {
-                    const tg = chargeTickGain.gain;
-                    tg.cancelScheduledValues(now);
-                    tg.setValueAtTime(tg.value, now);
-                    tg.linearRampToValueAtTime(0.001, now + durationSec);
-                }
-                setTimeout(() => { stopChargeSound(); }, durationSec * 1000 + 60);
-            } catch(e) { stopChargeSound(); }
-        }
-        function playExplosionSound() {
-            const ctx = initAudio();
-            if (!ctx) return;
-            const now = ctx.currentTime;
-            const master = ctx.createGain();
-            master.gain.value = 0.9;
-            master.connect(ctx.destination);
-            const bassOsc = ctx.createOscillator();
-            const bassGain = ctx.createGain();
-            bassOsc.type = 'sine';
-            bassOsc.frequency.setValueAtTime(220, now);
-            bassOsc.frequency.exponentialRampToValueAtTime(28, now + 0.8);
-            bassGain.gain.setValueAtTime(0.95, now);
-            bassGain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
-            bassOsc.connect(bassGain);
-            bassGain.connect(master);
-            bassOsc.start(now);
-            bassOsc.stop(now + 2.0);
-            const subOsc = ctx.createOscillator();
-            const subGain = ctx.createGain();
-            subOsc.type = 'sine';
-            subOsc.frequency.setValueAtTime(60, now);
-            subOsc.frequency.linearRampToValueAtTime(18, now + 0.5);
-            subGain.gain.setValueAtTime(0.8, now);
-            subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
-            subOsc.connect(subGain);
-            subGain.connect(master);
-            subOsc.start(now);
-            subOsc.stop(now + 1.5);
-            const crackBuffer = ctx.createBuffer(1, ctx.sampleRate * 0.15, ctx.sampleRate);
-            const crackData = crackBuffer.getChannelData(0);
-            for (let i = 0; i < crackData.length; i++) {
-                const t = i / crackData.length;
-                crackData[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 6);
-            }
-            const crackSrc = ctx.createBufferSource();
-            crackSrc.buffer = crackBuffer;
-            const crackFilter = ctx.createBiquadFilter();
-            crackFilter.type = 'highpass';
-            crackFilter.frequency.value = 800;
-            const crackGain = ctx.createGain();
-            crackGain.gain.setValueAtTime(0.9, now);
-            crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-            crackSrc.connect(crackFilter);
-            crackFilter.connect(crackGain);
-            crackGain.connect(master);
-            crackSrc.start(now);
-            crackSrc.stop(now + 0.2);
-            const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 1.4, ctx.sampleRate);
-            const ndata = noiseBuffer.getChannelData(0);
-            for (let i = 0; i < ndata.length; i++) {
-                ndata[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / ndata.length, 1.8);
-            }
-            const noiseSrc = ctx.createBufferSource();
-            noiseSrc.buffer = noiseBuffer;
-            const noiseFilter = ctx.createBiquadFilter();
-            noiseFilter.type = 'lowpass';
-            noiseFilter.frequency.setValueAtTime(6000, now);
-            noiseFilter.frequency.exponentialRampToValueAtTime(180, now + 1.2);
-            const noiseGain = ctx.createGain();
-            noiseGain.gain.setValueAtTime(0.7, now);
-            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
-            noiseSrc.connect(noiseFilter);
-            noiseFilter.connect(noiseGain);
-            noiseGain.connect(master);
-            noiseSrc.start(now);
-            noiseSrc.stop(now + 1.4);
-            for (let k = 0; k < 3; k++) {
-                const ringOsc = ctx.createOscillator();
-                const ringGain = ctx.createGain();
-                ringOsc.type = 'triangle';
-                const freq = 1800 + k * 900 + Math.random() * 400;
-                ringOsc.frequency.setValueAtTime(freq, now);
-                ringOsc.frequency.exponentialRampToValueAtTime(freq * 0.6, now + 0.9);
-                ringGain.gain.setValueAtTime(0.12, now + k * 0.02);
-                ringGain.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
-                ringOsc.connect(ringGain);
-                ringGain.connect(master);
-                ringOsc.start(now + k * 0.02);
-                ringOsc.stop(now + 1.1);
-            }
-            const rumbleBuffer = ctx.createBuffer(1, ctx.sampleRate * 2.5, ctx.sampleRate);
-            const rdata = rumbleBuffer.getChannelData(0);
-            for (let i = 0; i < rdata.length; i++) rdata[i] = (Math.random() * 2 - 1);
-            const rumbleSrc = ctx.createBufferSource();
-            rumbleSrc.buffer = rumbleBuffer;
-            const rumbleFilter = ctx.createBiquadFilter();
-            rumbleFilter.type = 'lowpass';
-            rumbleFilter.frequency.value = 90;
-            const rumbleGain = ctx.createGain();
-            rumbleGain.gain.setValueAtTime(0, now + 0.05);
-            rumbleGain.gain.linearRampToValueAtTime(0.55, now + 0.35);
-            rumbleGain.gain.exponentialRampToValueAtTime(0.001, now + 2.4);
-            rumbleSrc.connect(rumbleFilter);
-            rumbleFilter.connect(rumbleGain);
-            rumbleGain.connect(master);
-            rumbleSrc.start(now + 0.05);
-            rumbleSrc.stop(now + 2.5);
-            setTimeout(() => {
-                if (!audioCtx) return;
-                const t2 = audioCtx.currentTime;
-                const aftOsc = audioCtx.createOscillator();
-                const aftGain = audioCtx.createGain();
-                aftOsc.type = 'sine';
-                aftOsc.frequency.setValueAtTime(90, t2);
-                aftOsc.frequency.exponentialRampToValueAtTime(35, t2 + 0.4);
-                aftGain.gain.setValueAtTime(0.35, t2);
-                aftGain.gain.exponentialRampToValueAtTime(0.001, t2 + 0.7);
-                aftOsc.connect(aftGain);
-                aftGain.connect(master);
-                aftOsc.start(t2);
-                aftOsc.stop(t2 + 0.8);
-            }, 350);
-        }
 
-        // === THREE.JS COSMIC ENGINE ===
+        // ============================================================
+        // THREE.JS COSMIC ENGINE
+        // ============================================================
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.01, 8000);
@@ -589,7 +763,6 @@
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.18);
         scene.add(ambientLight);
 
-        // === SOLAR SYSTEM CAMERA STATE ===
         let currentTargetPlanetIndex = 2;
         const EARTH_INDEX = 2;
         let orbitSpeedMultiplier = 1;
@@ -656,7 +829,6 @@
             }
             return new THREE.CanvasTexture(c);
         }
-
         function makeMoonTex(baseColor, craterRgb) {
             const c = _canvas(512, 256);
             const ctx = c.getContext('2d');
@@ -689,7 +861,6 @@
         }
 
         const milkyWayGroup = new THREE.Group();
-        milkyWayGroup.visible = true;
         scene.add(milkyWayGroup);
         const circularStarMatWhite = new THREE.PointsMaterial({ size: 3.5, map: makeCircularStarTexture('rgba(200,220,255,0.8)'), transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending });
         const circularStarMatYellow = new THREE.PointsMaterial({ size: 4.0, map: makeCircularStarTexture('rgba(255,220,150,0.8)'), transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending });
@@ -739,133 +910,7 @@
             }
         })();
 
-        const travelComets = [];
-
-        function makeCometTailTexLocal(rgb, ionized) {
-            const w = 512, h = 128;
-            const c = _canvas(w, h);
-            const ctx = c.getContext('2d');
-            const gx = ctx.createLinearGradient(0, 0, w, 0);
-            if (ionized) {
-                gx.addColorStop(0.0, 'rgba(240,248,255,1)');
-                gx.addColorStop(0.05, 'rgba(200,225,255,0.95)');
-                gx.addColorStop(0.15, `rgba(${rgb},0.7)`);
-                gx.addColorStop(0.35, `rgba(${rgb},0.35)`);
-                gx.addColorStop(0.6, `rgba(${rgb},0.12)`);
-                gx.addColorStop(0.85, `rgba(${rgb},0.03)`);
-                gx.addColorStop(1.0, `rgba(${rgb},0)`);
-            } else {
-                gx.addColorStop(0.0, 'rgba(255,250,230,1)');
-                gx.addColorStop(0.1, 'rgba(255,240,200,0.9)');
-                gx.addColorStop(0.3, `rgba(${rgb},0.55)`);
-                gx.addColorStop(0.6, `rgba(${rgb},0.18)`);
-                gx.addColorStop(0.85, `rgba(${rgb},0.05)`);
-                gx.addColorStop(1.0, `rgba(${rgb},0)`);
-            }
-            ctx.fillStyle = gx;
-            ctx.fillRect(0, 0, w, h);
-            const gy = ctx.createLinearGradient(0, 0, 0, h);
-            gy.addColorStop(0.0, 'rgba(0,0,0,0)');
-            gy.addColorStop(0.15, 'rgba(0,0,0,0.4)');
-            gy.addColorStop(0.35, 'rgba(0,0,0,0.85)');
-            gy.addColorStop(0.5, 'rgba(0,0,0,1)');
-            gy.addColorStop(0.65, 'rgba(0,0,0,0.85)');
-            gy.addColorStop(0.85, 'rgba(0,0,0,0.4)');
-            gy.addColorStop(1.0, 'rgba(0,0,0,0)');
-            ctx.globalCompositeOperation = 'destination-in';
-            ctx.fillStyle = gy;
-            ctx.fillRect(0, 0, w, h);
-            ctx.globalCompositeOperation = 'source-over';
-            return new THREE.CanvasTexture(c);
-        }
-        function makeCometHeadTexLocal() {
-            const size = 128; const c = _canvas(size, size); const ctx = c.getContext('2d'); const g = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.2, 'rgba(200,240,255,0.9)'); g.addColorStop(0.5, 'rgba(140,200,255,0.4)'); g.addColorStop(1, 'rgba(100,150,255,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, size, size); return new THREE.CanvasTexture(c);
-        }
-        const cometHeadTex = makeCometHeadTexLocal();
-
-        function spawnTravelComet() {
-            const cg = new THREE.Group();
-            const nSize = 0.05 + Math.random() * 0.08;
-            const nucleusColor = Math.random() > 0.5 ? 0xffffff : 0xddddff;
-            const nucleus = new THREE.Mesh(
-                new THREE.SphereGeometry(nSize, 16, 16),
-                new THREE.MeshStandardMaterial({ 
-                    color: nucleusColor, 
-                    roughness: 0.4,
-                    emissive: nucleusColor,
-                    emissiveIntensity: 0.5
-                })
-            );
-            cg.add(nucleus);
-            const headGlow = new THREE.Sprite(new THREE.SpriteMaterial({ 
-                map: cometHeadTex, 
-                transparent: true, 
-                opacity: 0.95, 
-                depthWrite: false, 
-                blending: THREE.AdditiveBlending 
-            }));
-            const scaleVar = 0.8 + Math.random() * 0.8;
-            headGlow.scale.set(scaleVar, scaleVar, 1);
-            cg.add(headGlow);
-
-            const isBlue = Math.random() > 0.5;
-            const ionRgb = isBlue ? '140,190,255' : '200,180,255';
-            const dustRgb = '255,220,170';
-
-            const ionTex = makeCometTailTexLocal(ionRgb, true);
-            for (let layer = 0; layer < 3; layer++) {
-                const tail = new THREE.Sprite(new THREE.SpriteMaterial({ 
-                    map: ionTex, 
-                    transparent: true, 
-                    opacity: (0.85 - layer * 0.2) * (0.85 + Math.random() * 0.15), 
-                    depthWrite: false, 
-                    blending: THREE.AdditiveBlending 
-                }));
-                const tLen = (18 + Math.random() * 10) - layer * 2.5;
-                tail.scale.set(tLen, (1.6 - layer * 0.35), 1);
-                tail.position.x = -tLen * 0.4 + layer * 0.2;
-                tail.position.z = -0.02 * layer;
-                cg.add(tail);
-            }
-            const dustTex = makeCometTailTexLocal(dustRgb, false);
-            for (let layer = 0; layer < 2; layer++) {
-                const tail = new THREE.Sprite(new THREE.SpriteMaterial({ 
-                    map: dustTex, 
-                    transparent: true, 
-                    opacity: (0.65 - layer * 0.2) * (0.8 + Math.random() * 0.2), 
-                    depthWrite: false, 
-                    blending: THREE.AdditiveBlending 
-                }));
-                const tLen = (12 + Math.random() * 8) - layer * 2;
-                tail.scale.set(tLen, (2.4 - layer * 0.6), 1);
-                tail.position.x = -tLen * 0.4 - 0.15;
-                tail.position.y = -0.2 - layer * 0.15;
-                tail.position.z = 0.05;
-                cg.add(tail);
-            }
-
-            const angle = Math.random() * Math.PI * 2;
-            const rStart = 400 + Math.random() * 300;
-            cg.position.set(Math.cos(angle) * rStart, (Math.random() - 0.5) * 120, Math.sin(angle) * rStart);
-            const dir = new THREE.Vector3(
-                -cg.position.x + (Math.random() - 0.5) * 50,
-                -cg.position.y + (Math.random() - 0.5) * 40,
-                -cg.position.z + (Math.random() - 0.5) * 50
-            ).normalize();
-            travelComets.push({ grp: cg, dir, speed: 2.2 + Math.random() * 2.8, life: 1 });
-            milkyWayGroup.add(cg);
-        }
-        let travelCometTimer = 160;
-        const meteoroids = [];
-        (function buildMeteoroids() {
-            const geoTypes = [() => new THREE.DodecahedronGeometry(0.4 + Math.random() * 0.9, 0), () => new THREE.IcosahedronGeometry(0.3 + Math.random() * 0.8, 0), () => new THREE.BoxGeometry(0.6 + Math.random() * 0.7, 0.4 + Math.random() * 0.5, 0.5 + Math.random() * 0.6)];
-            const colors = [0x554433, 0x777777, 0x444a55, 0x665555];
-            for (let i = 0; i < 15; i++) { const mg = new THREE.Group(); const geoFn = geoTypes[Math.floor(Math.random() * geoTypes.length)]; const col = colors[Math.floor(Math.random() * colors.length)]; const mMesh = new THREE.Mesh(geoFn(), new THREE.MeshStandardMaterial({ color: col, roughness: 0.85, metalness: 0.2 })); mMesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI); mg.add(mMesh); const angle = Math.random() * Math.PI * 2; const dist = 60 + Math.random() * 120; mg.position.set(Math.cos(angle) * dist, (Math.random() - 0.5) * 60, Math.sin(angle) * dist); milkyWayGroup.add(mg); meteoroids.push({ grp: mg, rotSpd: new THREE.Vector3((Math.random()-0.5)*0.025, (Math.random()-0.5)*0.025, (Math.random()-0.5)*0.025) }); }
-        })();
-
-        // === SOLAR SYSTEM ===
         const solarSystemGroup = new THREE.Group();
-        solarSystemGroup.visible = true;
         scene.add(solarSystemGroup);
 
         const sunGroup = new THREE.Group();
@@ -892,7 +937,6 @@
         sunCoronaInner.scale.set(6.5, 6.5, 1); sunGroup.add(sunCoronaInner);
 
         const sunLight = new THREE.PointLight(0xfff0c4, 3.2, 1200, 2);
-        sunLight.position.set(0, 0, 0);
         sunGroup.add(sunLight);
         const sunFillLight = new THREE.PointLight(0xffe8a0, 0.35, 800);
         sunGroup.add(sunFillLight);
@@ -900,63 +944,22 @@
         solarSystemGroup.add(sunGroup);
 
         const PLANET_DATA = [
-            { name:'Mercury', r:0.20, o:6,   fb:['#8a7f75', '100,90,80'],   spd:0.42, rotSpd:0.005, roughness:0.95, metalness:0.05,
-              atmo:{ color: 0xbbaabb, inner: 0.08, outer: 0.04 } },
-            { name:'Venus',   r:0.30, o:9,   fb:['#d8b87a', '240,225,190'], spd:0.32, rotSpd:-0.003, roughness:0.85, metalness:0.08,
-              atmo:{ color: 0xffe4a8, inner: 0.65, outer: 0.38 } },
-            { name:'Earth',   r:0.36, o:13,  fb:null, clouds:true, spd:0.24, rotSpd:0.01, roughness:0.7, metalness:0.1,
-              atmo:{ color: 0x3b82f6, inner: 0.55, outer: 0.30 },
-              moons:[{ r:0.10, o:0.85, spd:1.8, useReal:true, incl:0.10 }] },
-            { name:'Mars',    r:0.26, o:17,  fb:['#c4653a', '230,160,120'], spd:0.19, rotSpd:0.009, roughness:0.9, metalness:0.08,
-              atmo:{ color: 0xff8050, inner: 0.30, outer: 0.14 },
-              moons:[
-                  { r:0.025, o:0.50, spd:2.6, color:'#8a7060', crater:'120,100,80', incl:0.20 },
-                  { r:0.018, o:0.75, spd:1.6, color:'#756a5e', crater:'90,80,70', incl:-0.15 }
-              ] },
-            { name:'Jupiter', r:1.10, o:25,  fb:['#d9b88a', '200,170,130'], spd:0.11, rotSpd:0.02, roughness:0.75, metalness:0.1,
-              atmo:{ color: 0xd4b088, inner: 0.45, outer: 0.22 },
-              moons:[
-                  { r:0.10, o:1.7, spd:1.3, color:'#e8d44a', crater:'180,150,40', incl:0.05 },
-                  { r:0.09, o:2.1, spd:1.1, color:'#e8e0d8', crater:'180,175,170', incl:-0.08 },
-                  { r:0.12, o:2.6, spd:0.9, color:'#8a7a6a', crater:'70,60,50', incl:0.12 },
-                  { r:0.11, o:3.2, spd:0.7, color:'#5a5250', crater:'40,35,35', incl:-0.10 }
-              ] },
-            { name:'Saturn',  r:0.95, o:34,  fb:['#e8d5a0', '225,205,165'], spd:0.08, rotSpd:0.018, roughness:0.8, metalness:0.1, ring:true,
-              atmo:{ color: 0xffe8b8, inner: 0.42, outer: 0.20 },
-              moons:[
-                  { r:0.10, o:2.0, spd:0.9, color:'#f0a04a', crater:'180,120,60', incl:0.10 },
-                  { r:0.06, o:1.6, spd:1.3, color:'#c8c0b8', crater:'120,110,100', incl:-0.05 },
-                  { r:0.05, o:2.5, spd:0.7, color:'#f0f0f0', crater:'180,180,180', incl:0.08 }
-              ] },
-            { name:'Uranus',  r:0.62, o:43,  fb:['#b0e0e6', '190,235,240'], spd:0.055, rotSpd:0.012, roughness:0.6, metalness:0.12, ring:true, ringColor:0x88ccee,
-              atmo:{ color: 0xa0e8f0, inner: 0.50, outer: 0.28 },
-              moons:[
-                  { r:0.06, o:1.3, spd:1.2, color:'#a0a0a0', crater:'80,80,80', incl:0.15 },
-                  { r:0.055, o:1.6, spd:1.0, color:'#706860', crater:'60,55,50', incl:-0.12 },
-                  { r:0.045, o:1.0, spd:1.5, color:'#c0b8b0', crater:'100,95,90', incl:0.10 }
-              ] },
-            { name:'Neptune', r:0.60, o:52,  fb:['#3b6cc0', '90,140,220'], spd:0.042, rotSpd:0.011, roughness:0.6, metalness:0.12,
-              atmo:{ color: 0x5588ff, inner: 0.55, outer: 0.30 },
-              moons:[
-                  { r:0.07, o:1.4, spd:-1.0, color:'#e0c8c0', crater:'150,120,110', incl:0.12 },
-                  { r:0.03, o:0.9, spd:1.5, color:'#555048', crater:'40,35,30', incl:-0.08 }
-              ] },
-            { name:'Pluto',   r:0.15, o:62,  fb:['#9a8878', '210,190,160'], spd:0.028, rotSpd:0.005, roughness:0.95, metalness:0.05,
-              atmo:{ color: 0x99bbdd, inner: 0.18, outer: 0.08 },
-              moons:[
-                  { r:0.05, o:0.35, spd:1.8, color:'#908878', crater:'70,65,55', incl:0.10 }
-              ] }
+            { name:'Mercury', r:0.20, o:6,   fb:['#8a7f75', '100,90,80'],   spd:0.42, rotSpd:0.005, roughness:0.95, metalness:0.05, atmo:{ color: 0xbbaabb, inner: 0.08, outer: 0.04 } },
+            { name:'Venus',   r:0.30, o:9,   fb:['#d8b87a', '240,225,190'], spd:0.32, rotSpd:-0.003, roughness:0.85, metalness:0.08, atmo:{ color: 0xffe4a8, inner: 0.65, outer: 0.38 } },
+            { name:'Earth',   r:0.36, o:13,  fb:null, clouds:true, spd:0.24, rotSpd:0.01, roughness:0.7, metalness:0.1, atmo:{ color: 0x3b82f6, inner: 0.55, outer: 0.30 }, moons:[{ r:0.10, o:0.85, spd:1.8, useReal:true, incl:0.10 }] },
+            { name:'Mars',    r:0.26, o:17,  fb:['#c4653a', '230,160,120'], spd:0.19, rotSpd:0.009, roughness:0.9, metalness:0.08, atmo:{ color: 0xff8050, inner: 0.30, outer: 0.14 }, moons:[{ r:0.025, o:0.50, spd:2.6, color:'#8a7060', crater:'120,100,80', incl:0.20 },{ r:0.018, o:0.75, spd:1.6, color:'#756a5e', crater:'90,80,70', incl:-0.15 }] },
+            { name:'Jupiter', r:1.10, o:25,  fb:['#d9b88a', '200,170,130'], spd:0.11, rotSpd:0.02, roughness:0.75, metalness:0.1, atmo:{ color: 0xd4b088, inner: 0.45, outer: 0.22 }, moons:[{ r:0.10, o:1.7, spd:1.3, color:'#e8d44a', crater:'180,150,40', incl:0.05 },{ r:0.09, o:2.1, spd:1.1, color:'#e8e0d8', crater:'180,175,170', incl:-0.08 },{ r:0.12, o:2.6, spd:0.9, color:'#8a7a6a', crater:'70,60,50', incl:0.12 },{ r:0.11, o:3.2, spd:0.7, color:'#5a5250', crater:'40,35,35', incl:-0.10 }] },
+            { name:'Saturn',  r:0.95, o:34,  fb:['#e8d5a0', '225,205,165'], spd:0.08, rotSpd:0.018, roughness:0.8, metalness:0.1, ring:true, atmo:{ color: 0xffe8b8, inner: 0.42, outer: 0.20 }, moons:[{ r:0.10, o:2.0, spd:0.9, color:'#f0a04a', crater:'180,120,60', incl:0.10 },{ r:0.06, o:1.6, spd:1.3, color:'#c8c0b8', crater:'120,110,100', incl:-0.05 },{ r:0.05, o:2.5, spd:0.7, color:'#f0f0f0', crater:'180,180,180', incl:0.08 }] },
+            { name:'Uranus',  r:0.62, o:43,  fb:['#b0e0e6', '190,235,240'], spd:0.055, rotSpd:0.012, roughness:0.6, metalness:0.12, ring:true, ringColor:0x88ccee, atmo:{ color: 0xa0e8f0, inner: 0.50, outer: 0.28 }, moons:[{ r:0.06, o:1.3, spd:1.2, color:'#a0a0a0', crater:'80,80,80', incl:0.15 },{ r:0.055, o:1.6, spd:1.0, color:'#706860', crater:'60,55,50', incl:-0.12 },{ r:0.045, o:1.0, spd:1.5, color:'#c0b8b0', crater:'100,95,90', incl:0.10 }] },
+            { name:'Neptune', r:0.60, o:52,  fb:['#3b6cc0', '90,140,220'], spd:0.042, rotSpd:0.011, roughness:0.6, metalness:0.12, atmo:{ color: 0x5588ff, inner: 0.55, outer: 0.30 }, moons:[{ r:0.07, o:1.4, spd:-1.0, color:'#e0c8c0', crater:'150,120,110', incl:0.12 },{ r:0.03, o:0.9, spd:1.5, color:'#555048', crater:'40,35,30', incl:-0.08 }] },
+            { name:'Pluto',   r:0.15, o:62,  fb:['#9a8878', '210,190,160'], spd:0.028, rotSpd:0.005, roughness:0.95, metalness:0.05, atmo:{ color: 0x99bbdd, inner: 0.18, outer: 0.08 }, moons:[{ r:0.05, o:0.35, spd:1.8, color:'#908878', crater:'70,65,55', incl:0.10 }] }
         ];
+
         const planetObjs = [];
         for (const p of PLANET_DATA) {
             const grp = new THREE.Group();
             const baseTex = p.name === 'Earth' ? makeEarthTexFallback() : makeSimpleTex(p.fb[0], p.fb[1]);
-            const mat = new THREE.MeshStandardMaterial({ 
-                map: baseTex, 
-                roughness: p.roughness || 0.8, 
-                metalness: p.metalness || 0.05,
-                envMapIntensity: 0.4
-            });
+            const mat = new THREE.MeshStandardMaterial({ map: baseTex, roughness: p.roughness || 0.8, metalness: p.metalness || 0.05, envMapIntensity: 0.4 });
             const sphere = new THREE.Mesh(new THREE.SphereGeometry(p.r, 96, 96), mat);
             sphere.userData.rotSpd = p.rotSpd;
             grp.add(sphere);
@@ -973,22 +976,15 @@
                     cctx.arc(x, y, r, 0, Math.PI*2);
                     cctx.fill();
                 }
-                const cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(p.r * 1.018, 96, 96), new THREE.MeshStandardMaterial({ 
-                    map: new THREE.CanvasTexture(cloudCanvas), 
-                    transparent: true, 
-                    opacity: 0.85, 
-                    depthWrite: false,
-                    roughness: 0.9,
-                    metalness: 0
-                }));
+                const cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(p.r * 1.018, 96, 96), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cloudCanvas), transparent: true, opacity: 0.85, depthWrite: false, roughness: 0.9, metalness: 0 }));
                 cloudMesh.userData.rotSpd = p.rotSpd * 1.35;
                 cloudMesh.userData.isCloud = true;
                 grp.add(cloudMesh);
             }
             if (p.atmo) {
-                const atmoColor = typeof p.atmo === 'number' ? p.atmo : (p.atmo.color || 0xffffff);
-                const atmoInner = typeof p.atmo === 'number' ? 0.55 : (p.atmo.inner !== undefined ? p.atmo.inner : 0.5);
-                const atmoOuter = typeof p.atmo === 'number' ? 0.3 : (p.atmo.outer !== undefined ? p.atmo.outer : 0.25);
+                const atmoColor = p.atmo.color || 0xffffff;
+                const atmoInner = p.atmo.inner !== undefined ? p.atmo.inner : 0.5;
+                const atmoOuter = p.atmo.outer !== undefined ? p.atmo.outer : 0.25;
                 const aCanvas = _canvas(512, 512);
                 const actx = aCanvas.getContext('2d');
                 const ag = actx.createRadialGradient(256, 256, 40, 256, 256, 256);
@@ -1000,22 +996,10 @@
                 actx.fillStyle = ag;
                 actx.fillRect(0, 0, 512, 512);
                 const atmoTex = new THREE.CanvasTexture(aCanvas);
-                const atmo = new THREE.Sprite(new THREE.SpriteMaterial({ 
-                    map: atmoTex, 
-                    transparent: true, 
-                    opacity: atmoInner, 
-                    depthWrite: false, 
-                    blending: THREE.AdditiveBlending 
-                }));
+                const atmo = new THREE.Sprite(new THREE.SpriteMaterial({ map: atmoTex, transparent: true, opacity: atmoInner, depthWrite: false, blending: THREE.AdditiveBlending }));
                 atmo.scale.set(p.r * 2.7, p.r * 2.7, 1);
                 grp.add(atmo);
-                const atmo2 = new THREE.Sprite(new THREE.SpriteMaterial({ 
-                    map: atmoTex, 
-                    transparent: true, 
-                    opacity: atmoOuter, 
-                    depthWrite: false, 
-                    blending: THREE.AdditiveBlending 
-                }));
+                const atmo2 = new THREE.Sprite(new THREE.SpriteMaterial({ map: atmoTex, transparent: true, opacity: atmoOuter, depthWrite: false, blending: THREE.AdditiveBlending }));
                 atmo2.scale.set(p.r * 4.2, p.r * 4.2, 1);
                 grp.add(atmo2);
             }
@@ -1032,15 +1016,12 @@
                 ring2.rotation.x = Math.PI / 2.2;
                 grp.add(ring2);
             }
-
-            // === FAINT ORBIT LINE ===
             const pts = [];
             for (let i = 0; i <= 160; i++) { const a = (i / 160) * Math.PI * 2; pts.push(new THREE.Vector3(Math.cos(a) * p.o, 0, Math.sin(a) * p.o)); }
             const og = new THREE.BufferGeometry().setFromPoints(pts);
             const om = new THREE.LineBasicMaterial({ color: 0x6e7f95, transparent: true, opacity: 0.08 });
             solarSystemGroup.add(new THREE.Line(og, om));
 
-            // === REALISTIC MOONS ===
             const moons = [];
             if (p.moons) {
                 for (const m of p.moons) {
@@ -1055,33 +1036,20 @@
                     } else {
                         moonTex = makeMoonTex(m.color || '#a8a8a8', m.crater || '80,75,70');
                     }
-                    const moonMesh = new THREE.Mesh(
-                        new THREE.SphereGeometry(m.r, 48, 48),
-                        new THREE.MeshStandardMaterial({
-                            map: moonTex,
-                            roughness: 0.95,
-                            metalness: 0.02
-                        })
-                    );
+                    const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(m.r, 48, 48), new THREE.MeshStandardMaterial({ map: moonTex, roughness: 0.95, metalness: 0.02 }));
                     moonMesh.position.x = m.o;
                     moonMesh.userData.isMoon = true;
                     moonGrp.add(moonMesh);
-
                     const mPts = [];
-                    for (let i = 0; i <= 64; i++) {
-                        const a = (i / 64) * Math.PI * 2;
-                        mPts.push(new THREE.Vector3(Math.cos(a) * m.o, 0, Math.sin(a) * m.o));
-                    }
+                    for (let i = 0; i <= 64; i++) { const a = (i / 64) * Math.PI * 2; mPts.push(new THREE.Vector3(Math.cos(a) * m.o, 0, Math.sin(a) * m.o)); }
                     const mOrbitGeo = new THREE.BufferGeometry().setFromPoints(mPts);
                     const mOrbitMat = new THREE.LineBasicMaterial({ color: 0x556677, transparent: true, opacity: 0.04 });
                     moonGrp.add(new THREE.Line(mOrbitGeo, mOrbitMat));
-
                     if (m.incl !== undefined) moonGrp.rotation.x = m.incl;
                     grp.add(moonGrp);
                     moons.push({ grp: moonGrp, speed: m.spd, angle: Math.random() * Math.PI * 2, mesh: moonMesh });
                 }
             }
-
             const startAngle = Math.random() * Math.PI * 2;
             grp.userData = { name: p.name, orbit: p.o, speed: p.spd, angle: startAngle, earth: p.name === 'Earth', sphere, moons };
             grp.position.set(Math.cos(startAngle) * p.o, 0, Math.sin(startAngle) * p.o);
@@ -1100,11 +1068,8 @@
         camera.position.set(_initEarthPos.x + targetCameraZ, _initEarthPos.y + targetCameraZ * 0.3, _initEarthPos.z + targetCameraZ);
         camera.lookAt(_initEarthPos);
 
-        // === NEW REALISTIC ASTEROID BELT ===
         const asteroidBeltGroup = new THREE.Group();
         const asteroidMeshes = [];
-        
-        // 1. Dust cloud (Clean and realistic)
         const dustCount = 4000;
         const dustPos = new Float32Array(dustCount * 3);
         const dustColors = new Float32Array(dustCount * 3);
@@ -1115,20 +1080,14 @@
             dustPos[i*3] = Math.cos(angle) * dist;
             dustPos[i*3+1] = yOffset;
             dustPos[i*3+2] = Math.sin(angle) * dist;
-            
             const c = new THREE.Color().setHSL(0.08, 0.15, 0.15 + Math.random() * 0.15);
-            dustColors[i*3] = c.r;
-            dustColors[i*3+1] = c.g;
-            dustColors[i*3+2] = c.b;
+            dustColors[i*3] = c.r; dustColors[i*3+1] = c.g; dustColors[i*3+2] = c.b;
         }
         const dustGeo = new THREE.BufferGeometry();
         dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
         dustGeo.setAttribute('color', new THREE.BufferAttribute(dustColors, 3));
         const dustMat = new THREE.PointsMaterial({ size: 0.06, vertexColors: true, transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending });
-        const dustBelt = new THREE.Points(dustGeo, dustMat);
-        asteroidBeltGroup.add(dustBelt);
-
-        // 2. Individual larger rocks
+        asteroidBeltGroup.add(new THREE.Points(dustGeo, dustMat));
         const rockCount = 80;
         const astGeo = new THREE.DodecahedronGeometry(0.03, 0);
         const astMat = new THREE.MeshStandardMaterial({ color: 0x665f55, roughness: 0.95, metalness: 0.05 });
@@ -1169,31 +1128,17 @@
         const TEX_BASE = 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/';
         const TEX_BASE_EARTH = 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/';
         const REAL_TEX = {
-            Sun: TEX_BASE + 'sunmap.jpg',
-            Mercury: TEX_BASE + 'mercurymap.jpg',
-            Venus: TEX_BASE + 'venusmap.jpg',
-            Earth: TEX_BASE_EARTH + 'earth_atmos_2048.jpg',
-            EarthSpec: TEX_BASE_EARTH + 'earth_specular_2048.jpg',
-            EarthClouds: TEX_BASE_EARTH + 'earth_clouds_1024.png',
-            EarthBump: TEX_BASE_EARTH + 'earth_normal_2048.jpg',
-            Moon: TEX_BASE + 'moonmap1k.jpg',
-            Mars: TEX_BASE + 'marsmap1k.jpg',
-            Jupiter: TEX_BASE + 'jupitermap.jpg',
-            Saturn: TEX_BASE + 'saturnmap.jpg',
-            Uranus: TEX_BASE + 'uranusmap.jpg',
-            Neptune: TEX_BASE + 'neptunemap.jpg',
-            Pluto: TEX_BASE + 'plutomap1k.jpg'
+            Sun: TEX_BASE + 'sunmap.jpg', Mercury: TEX_BASE + 'mercurymap.jpg', Venus: TEX_BASE + 'venusmap.jpg',
+            Earth: TEX_BASE_EARTH + 'earth_atmos_2048.jpg', EarthSpec: TEX_BASE_EARTH + 'earth_specular_2048.jpg',
+            EarthClouds: TEX_BASE_EARTH + 'earth_clouds_1024.png', EarthBump: TEX_BASE_EARTH + 'earth_normal_2048.jpg',
+            Moon: TEX_BASE + 'moonmap1k.jpg', Mars: TEX_BASE + 'marsmap1k.jpg', Jupiter: TEX_BASE + 'jupitermap.jpg',
+            Saturn: TEX_BASE + 'saturnmap.jpg', Uranus: TEX_BASE + 'uranusmap.jpg', Neptune: TEX_BASE + 'neptunemap.jpg', Pluto: TEX_BASE + 'plutomap1k.jpg'
         };
         const texLoader = new THREE.TextureLoader();
         texLoader.setCrossOrigin('anonymous');
         
         const skyboxGeo = new THREE.SphereGeometry(4000, 64, 64);
-        const skyboxMat = new THREE.MeshBasicMaterial({ 
-            map: texLoader.load('https://threejs.org/examples/textures/planets/starfield.png'), 
-            side: THREE.BackSide, 
-            transparent: true, 
-            opacity: 1 
-        });
+        const skyboxMat = new THREE.MeshBasicMaterial({ map: texLoader.load('https://threejs.org/examples/textures/planets/starfield.png'), side: THREE.BackSide, transparent: true, opacity: 1 });
         const skybox = new THREE.Mesh(skyboxGeo, skyboxMat);
         scene.add(skybox);
 
@@ -1215,7 +1160,6 @@
             sunMesh.material.color.setHex(0xffffff);
             sunMesh.material.needsUpdate = true;
         });
-
         for (const grp of planetObjs) {
             const name = grp.userData.name;
             if (!REAL_TEX[name]) continue;
@@ -1227,69 +1171,18 @@
                 }
             });
         }
-        if (earthObj) {
-            const earthSphere = earthObj.userData.sphere;
-            loadRealTex('EarthBump', (tex) => {
-                earthSphere.material.bumpMap = tex;
-                earthSphere.material.bumpScale = 0.035;
-                earthSphere.material.normalMap = tex;
-                earthSphere.material.needsUpdate = true;
-            });
-            loadRealTex('EarthSpec', (tex) => {
-                earthSphere.material.roughnessMap = tex;
-                earthSphere.material.roughness = 0.6;
-                earthSphere.material.metalness = 0.15;
-                earthSphere.material.needsUpdate = true;
-            });
-            for (const child of earthObj.children) {
-                if (child.userData && child.userData.isCloud) {
-                    loadRealTex('EarthClouds', (tex) => {
-                        tex.encoding = THREE.sRGBEncoding;
-                        child.material.map = tex;
-                        child.material.opacity = 0.9;
-                        child.material.needsUpdate = true;
-                    });
-                    break;
-                }
-            }
-        }
-        if (earthObj && earthObj.userData.moons) {
-            for (const m of earthObj.userData.moons) {
-                loadRealTex('Moon', (tex) => {
-                    m.grp.traverse((c) => {
-                        if (c.userData && c.userData.isMoon && c.material) {
-                            tex.encoding = THREE.sRGBEncoding;
-                            c.material.map = tex;
-                            c.material.needsUpdate = true;
-                        }
-                    });
-                });
-            }
-        }
 
-        let spaceState = 'space';
-        let spaceProgress = 1;
-        let solarAlpha = 1;
-        let milkyAlpha = 1;
-        let earthFocusAmount = 0;
         let lastInteractionTime = Date.now();
         const IDLE_COLLAPSE_MS = 5 * 60 * 1000;
-
         function resetIdleTimer() { lastInteractionTime = Date.now(); }
-        
         window.addEventListener('pointerdown', resetIdleTimer);
         window.addEventListener('pointermove', resetIdleTimer);
         window.addEventListener('wheel', resetIdleTimer);
         window.addEventListener('touchstart', resetIdleTimer);
         window.addEventListener('touchmove', resetIdleTimer);
 
-        function triggerSpaceExpand() {}
-        function triggerSpaceCollapse() {}
-        function triggerISSView() {}
-
         let landingState = 'none';
         let landingTarget = new THREE.Vector3();
-        let issLastTapTime = 0;
 
         function triggerEarthLanding() {
             if (landingState !== 'none') return;
@@ -1302,28 +1195,17 @@
             document.getElementById('map-overlay').classList.remove('active');
             document.getElementById('map-exit').classList.remove('active');
             document.getElementById('street-view-container').style.display = 'none';
-            document.getElementById('btn-dubai').style.display = 'none';
             setTimeout(() => {
                 document.getElementById('map-overlay').style.display = 'none';
                 if (map) { map.remove(); map = null; }
                 landingState = 'none';
                 currentTargetPlanetIndex = EARTH_INDEX;
-                const earthRadius = planetObjs[EARTH_INDEX].userData.sphere.geometry.parameters.radius;
-                targetCameraZ = earthRadius * 6;
-                issLastTapTime = 0;
+                const earthRadius2 = planetObjs[EARTH_INDEX].userData.sphere.geometry.parameters.radius;
+                targetCameraZ = earthRadius2 * 6;
             }, 1500);
         }
 
-        const issHint = document.createElement('div');
-        issHint.id = 'iss-hint';
-        issHint.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:10px 20px; border-radius:20px; font-family:Inter, sans-serif; font-size:12px; letter-spacing:0.1em; text-transform:uppercase; opacity:0; transition:opacity 0.5s; z-index:100; border:1px solid rgba(139,92,246,0.5); pointer-events:none;';
-        issHint.innerText = 'Double-tap any planet to travel · Pinch to zoom';
-        document.body.appendChild(issHint);
-        setTimeout(() => { issHint.style.opacity = '1'; }, 2000);
-        setTimeout(() => { issHint.style.opacity = '0'; }, 8000);
-
         let lastTapTime = 0; let lastTapX = 0, lastTapY = 0;
-
         container.addEventListener('wheel', (e) => { 
             if (landingState !== 'none') return; 
             e.preventDefault(); 
@@ -1333,97 +1215,7 @@
             cameraRadius = targetCameraZ;
         }, { passive: false });
 
-        const BOLT_COUNT = 12; const boltPool = [];
-        for (let i = 0; i < BOLT_COUNT; i++) { const boltMat = new THREE.LineBasicMaterial({ color: 0xffe066, transparent: true, opacity: 0 }); const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(24 * 3), 3)); const line = new THREE.Line(geo, boltMat); line.visible = false; scene.add(line); boltPool.push({ line, life: 0 }); }
-        function spawnBolt() { const bolt = boltPool.find(b => b.life <= 0); if (!bolt) return; const startAngle = Math.random() * Math.PI * 2; const startR = 0.3 + Math.random() * 0.35; const endAngle = startAngle + (Math.random() - 0.5) * Math.PI * 1.4; const endR = 2.0 + Math.random() * 0.55; const points = []; const segments = 14; for (let i = 0; i <= segments; i++) { const t = i / segments; const r = startR + (endR - startR) * t + (Math.random() - 0.5) * 0.5; const a = startAngle + (endAngle - startAngle) * t + (Math.random() - 0.5) * 0.6; points.push(Math.cos(a) * r, Math.sin(a) * r, (Math.random() - 0.5) * 0.8); } const arr = bolt.line.geometry.attributes.position.array; for (let i = 0; i < points.length; i++) arr[i] = points[i]; for (let i = points.length; i < arr.length; i++) arr[i] = points[points.length - 1]; bolt.line.geometry.attributes.position.needsUpdate = true; bolt.line.geometry.computeBoundingSphere(); bolt.line.material.opacity = 0.9 + Math.random() * 0.1; bolt.line.visible = true; bolt.life = 1; }
-        function makeSmokeTexture() { const size = 128; const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size; const ctx = canvas.getContext('2d'); const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2); grad.addColorStop(0, 'rgba(180,180,200,0.55)'); grad.addColorStop(0.5, 'rgba(120,120,140,0.25)'); grad.addColorStop(1, 'rgba(60,60,80,0)'); ctx.fillStyle = grad; ctx.fillRect(0, 0, size, size); return new THREE.CanvasTexture(canvas); }
-        const smokeTexture = makeSmokeTexture(); const smokePool = []; const smokeGroup = new THREE.Group(); scene.add(smokeGroup);
-        function spawnSmoke() { let p = smokePool.find(s => s.life <= 0); if (!p) { const mat = new THREE.SpriteMaterial({ map: smokeTexture, transparent: true, opacity: 0, depthWrite: false, color: 0x9ca3af }); const sprite = new THREE.Sprite(mat); smokeGroup.add(sprite); p = { sprite, life: 0, vx: 0, vy: 0, rotation: 0, rotSpeed: 0 }; smokePool.push(p); } const angle = Math.random() * Math.PI * 2; const r = 0.6 + Math.random() * 0.7; p.sprite.position.set(Math.cos(angle) * r, Math.sin(angle) * r * 0.6 - 0.3, -0.5); const s = 0.3 + Math.random() * 0.4; p.sprite.scale.set(s, s, 1); p.sprite.material.opacity = 0.35 + Math.random() * 0.35; p.sprite.material.rotation = Math.random() * Math.PI * 2; p.rotSpeed = (Math.random() - 0.5) * 0.06; p.vx = (Math.random() - 0.5) * 0.008; p.vy = 0.006 + Math.random() * 0.01; p.life = 1; }
-
-        let cosmicBirthGroup = null;
-        let cosmicBirthLife = 0;
-
-        function spawnCosmicBirth() {
-            if (cosmicBirthGroup) { scene.remove(cosmicBirthGroup); cosmicBirthGroup = null; }
-            cosmicBirthGroup = new THREE.Group();
-            const flashGeo = new THREE.SphereGeometry(0.1, 32, 32);
-            const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1.0 });
-            cosmicBirthGroup.add(new THREE.Mesh(flashGeo, flashMat));
-            const N = 4000;
-            const positions = new Float32Array(N * 3);
-            const colors = new Float32Array(N * 3);
-            const velocities = [];
-            const palette = [new THREE.Color(0xffffff), new THREE.Color(0xa78bfa), new THREE.Color(0x3b82f6), new THREE.Color(0xf59e0b), new THREE.Color(0xef4444)];
-            for (let i = 0; i < N; i++) {
-                positions[i*3] = 0; positions[i*3+1] = 0; positions[i*3+2] = 0;
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.acos(2 * Math.random() - 1);
-                const speed = 0.05 + Math.random() * 0.35;
-                velocities.push({ x: Math.sin(phi) * Math.cos(theta) * speed, y: Math.sin(phi) * Math.sin(theta) * speed, z: Math.cos(phi) * speed });
-                const c = palette[Math.floor(Math.random() * palette.length)];
-                colors[i*3] = c.r; colors[i*3+1] = c.g; colors[i*3+2] = c.b;
-            }
-            const burstGeo = new THREE.BufferGeometry();
-            burstGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            burstGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            const burstMat = new THREE.PointsMaterial({ size: 0.2, vertexColors: true, transparent: true, opacity: 1.0, depthWrite: false, blending: THREE.AdditiveBlending, map: makeCircularStarTexture('rgba(255,255,255,1)') });
-            const burstPoints = new THREE.Points(burstGeo, burstMat);
-            burstPoints.userData = { velocities };
-            cosmicBirthGroup.add(burstPoints);
-            for (let i = 0; i < 40; i++) {
-                const cloudGeo = new THREE.SphereGeometry(2 + Math.random() * 4, 16, 16);
-                const cloudMat = new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0x8b5cf6 : 0x3b82f6, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending });
-                const cloud = new THREE.Mesh(cloudGeo, cloudMat);
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.acos(2 * Math.random() - 1);
-                const r = 5 + Math.random() * 40;
-                cloud.position.set(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
-                cosmicBirthGroup.add(cloud);
-            }
-            scene.add(cosmicBirthGroup);
-            cosmicBirthLife = 1.0;
-        }
-
-        function updateCosmicBirth() {
-            if (!cosmicBirthGroup || cosmicBirthLife <= 0) return;
-            cosmicBirthLife -= 0.008;
-            const burstPoints = cosmicBirthGroup.children[1];
-            if (burstPoints && burstPoints.geometry) {
-                const positions = burstPoints.geometry.attributes.position.array;
-                const vels = burstPoints.userData.velocities;
-                for (let i = 0; i < vels.length; i++) {
-                    positions[i*3] += vels[i].x; positions[i*3+1] += vels[i].y; positions[i*3+2] += vels[i].z;
-                    vels[i].x *= 0.98; vels[i].y *= 0.98; vels[i].z *= 0.98;
-                }
-                burstPoints.geometry.attributes.position.needsUpdate = true;
-            }
-            cosmicBirthGroup.traverse((child) => { if (child.material) { child.material.opacity = Math.max(0, cosmicBirthLife * (child.material.userData?.baseOpacity || 1)); } });
-            if (cosmicBirthLife <= 0) { scene.remove(cosmicBirthGroup); cosmicBirthGroup = null; }
-        }
-
-        const WARP_COUNT = 600;
-        let warpLineSegments = null;
-        const warpState = [];
-        function initWarpStreaks() {
-            const positions = new Float32Array(WARP_COUNT * 6);
-            const colors = new Float32Array(WARP_COUNT * 6);
-            const geo = new THREE.BufferGeometry();
-            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            const mat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
-            warpLineSegments = new THREE.LineSegments(geo, mat);
-            warpLineSegments.frustumCulled = false;
-            warpLineSegments.visible = false;
-            scene.add(warpLineSegments);
-        }
-        initWarpStreaks();
-        function updateWarpStreaks(intensity) { }
-
-        const ripples = [];
-        function spawnRipple(color = 0xa78bfa) { const geo = new THREE.RingGeometry(0.5, 0.6, 48); const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, side: THREE.DoubleSide }); const ring = new THREE.Mesh(geo, mat); ring.position.z = 0.5; scene.add(ring); ripples.push({ mesh: ring, life: 1 }); }
-        function spawnExplosion() { for (let i = 0; i < 10; i++) setTimeout(() => spawnRipple(0xff3b30), i * 50); for (let i = 0; i < 30; i++) setTimeout(spawnBolt, i * 20); for (let i = 0; i < 60; i++) setTimeout(spawnSmoke, i * 18); }
         function getDistance(t1, t2) { const dx = t1.x - t2.x, dy = t1.y - t2.y; return Math.sqrt(dx*dx + dy*dy); }
-
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
 
@@ -1432,20 +1224,16 @@
             pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
             pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
             raycaster.setFromCamera(pointer, camera);
-            
             const meshes = planetObjs.map(g => g.userData.sphere);
             const planetHits = raycaster.intersectObjects(meshes, false);
             const sunHits = raycaster.intersectObject(sunMesh, false);
-            
             let best = null;
             if (planetHits.length > 0) {
                 const idx = meshes.indexOf(planetHits[0].object);
                 if (idx >= 0) best = { index: idx, distance: planetHits[0].distance, isSun: false };
             }
             if (sunHits.length > 0) {
-                if (!best || sunHits[0].distance < best.distance) {
-                    best = { index: -1, distance: sunHits[0].distance, isSun: true };
-                }
+                if (!best || sunHits[0].distance < best.distance) best = { index: -1, distance: sunHits[0].distance, isSun: true };
             }
             return best;
         }
@@ -1463,50 +1251,36 @@
             targetCameraZ = planetRadius * 6;
         }
 
+        let isDragging = false;
+        let pointerVelocity = { x: 0, y: 0 };
+        let pinchStartDist = 0;
+        const activePointers = new Map();
+
         container.addEventListener('pointerdown', (e) => { 
             try { container.setPointerCapture(e.pointerId); } catch(err) {} 
             initAudio(); 
             resetIdleTimer(); 
             if (landingState !== 'none') return; 
-            
             const now = Date.now(); 
-            
             if (now - lastTapTime < 400) {
                 const dx = e.clientX - lastTapX;
                 const dy = e.clientY - lastTapY;
                 if (Math.sqrt(dx*dx + dy*dy) < 60) {
                     const hit = raycastPlanetHit(e);
                     if (hit !== null) {
-                        if (hit.index === EARTH_INDEX && currentTargetPlanetIndex === EARTH_INDEX) {
-                            triggerEarthLanding();
-                        } else {
-                            flyToPlanet(hit.index);
-                        }
+                        if (hit.index === EARTH_INDEX && currentTargetPlanetIndex === EARTH_INDEX) triggerEarthLanding();
+                        else flyToPlanet(hit.index);
                         lastTapTime = 0;
                         return;
                     }
                 }
             }
-
-            lastTapTime = now; 
-            lastTapX = e.clientX; 
-            lastTapY = e.clientY; 
+            lastTapTime = now; lastTapX = e.clientX; lastTapY = e.clientY; 
             activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); 
             container.classList.add('touched'); 
-            
-            if (activePointers.size === 1) { 
-                isDragging = true; 
-                pointerVelocity = { x: 0, y: 0 }; 
-            } else if (activePointers.size === 2) { 
-                const pts = Array.from(activePointers.values()); 
-                pinchStartDist = getDistance(pts[0], pts[1]); 
-            } 
+            if (activePointers.size === 1) { isDragging = true; pointerVelocity = { x: 0, y: 0 }; } 
+            else if (activePointers.size === 2) { const pts = Array.from(activePointers.values()); pinchStartDist = getDistance(pts[0], pts[1]); } 
         });
-
-        let isDragging = false;
-        let pointerVelocity = { x: 0, y: 0 };
-        let pinchStartDist = 0;
-        const activePointers = new Map();
 
         container.addEventListener('pointermove', (e) => { 
             if (landingState !== 'none') return; 
@@ -1514,14 +1288,12 @@
             resetIdleTimer(); 
             const prev = activePointers.get(e.pointerId); 
             activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); 
-            
             if (activePointers.size === 1 && isDragging) { 
                 const dx = e.clientX - prev.x; 
                 const dy = e.clientY - prev.y; 
                 cameraTheta -= dx * 0.008; 
                 cameraPhi = Math.max(-1.5, Math.min(1.5, cameraPhi + dy * 0.008)); 
-                pointerVelocity.x = dx; 
-                pointerVelocity.y = dy; 
+                pointerVelocity.x = dx; pointerVelocity.y = dy; 
             } else if (activePointers.size === 2) { 
                 const pts = Array.from(activePointers.values()); 
                 const dist = getDistance(pts[0], pts[1]); 
@@ -1536,15 +1308,9 @@
         function endPointer(e) { 
             if (landingState !== 'none') return; 
             activePointers.delete(e.pointerId); 
-            if (activePointers.size === 0) { 
-                isDragging = false; 
-                container.classList.remove('touched'); 
-                pointerVelocity = { x: 0, y: 0 }; 
-            } else if (activePointers.size === 1) { 
-                pinchStartDist = 0; 
-            } 
+            if (activePointers.size === 0) { isDragging = false; container.classList.remove('touched'); pointerVelocity = { x: 0, y: 0 }; } 
+            else if (activePointers.size === 1) { pinchStartDist = 0; } 
         }
-
         container.addEventListener('pointerup', endPointer); 
         container.addEventListener('pointercancel', endPointer); 
         container.addEventListener('touchstart', (e) => { if (landingState !== 'none') return; e.preventDefault(); }, { passive: false }); 
@@ -1578,56 +1344,22 @@
                         initMap();
                     }, 100);
                 }
-                updateCosmicBirth();
                 renderer.render(scene, camera);
                 return;
             }
             
             if (landingState === 'landed') {
-                updateCosmicBirth();
                 renderer.render(scene, camera);
                 return;
             }
 
             if ((nowMs - lastInteractionTime) > IDLE_COLLAPSE_MS) {
-                if (currentTargetPlanetIndex !== EARTH_INDEX) {
-                    flyToPlanet(EARTH_INDEX);
-                }
+                if (currentTargetPlanetIndex !== EARTH_INDEX) flyToPlanet(EARTH_INDEX);
                 lastInteractionTime = Date.now();
             }
 
-            spaceProgress = 1;
-            solarAlpha = 1;
-            milkyAlpha = 1;
-            
             skybox.visible = true;
-            skybox.material.opacity = milkyAlpha;
-            
-            milkyWayGroup.visible = true;
-            const galaxyScale = 1 * (1 + 1 * 1.6);
-            milkyWayGroup.scale.setScalar(galaxyScale);
             milkyWayGroup.rotation.y += 0.0005;
-            milkyWayGroup.traverse((o) => { 
-                if (o.material && o.material.opacity !== undefined) { 
-                    if (o.userData.baseOpacity === undefined) o.userData.baseOpacity = o.material.opacity; 
-                    o.material.opacity = o.userData.baseOpacity * milkyAlpha; 
-                } 
-            });
-            
-            solarSystemGroup.visible = true;
-            solarSystemGroup.scale.setScalar(1);
-            sunLight.intensity = 3.2;
-            sunFillLight.intensity = 0.35;
-            solarSystemGroup.traverse((o) => { 
-                if (o === sunCorona || o === sunCoronaInner) return; 
-                if (o.material && o.material.transparent) { 
-                    if (o.userData.baseOpacity === undefined) o.userData.baseOpacity = o.material.opacity; 
-                    o.material.opacity = o.userData.baseOpacity * solarAlpha; 
-                } 
-            }); 
-            sunCorona.material.opacity = (0.85 + Math.sin(nowMs * 0.0015) * 0.15) * solarAlpha; 
-            sunCoronaInner.material.opacity = (0.9 + Math.sin(nowMs * 0.0025) * 0.1) * solarAlpha;
-
             const ts = nowMs * 0.001;
             const speedMult = orbitSpeedMultiplier;
             
@@ -1677,90 +1409,161 @@
                 }
             }
 
-            travelCometTimer -= 1;
-            if (travelCometTimer <= 0 && travelComets.length < 4) {
-                spawnTravelComet();
-                travelCometTimer = 200 + Math.floor(Math.random() * 100);
-            }
-            for (let i = travelComets.length - 1; i >= 0; i--) {
-                const c = travelComets[i];
-                c.grp.position.addScaledVector(c.dir, c.speed);
-                c.grp.lookAt(new THREE.Vector3(c.grp.position.x + c.dir.x, c.grp.position.y + c.dir.y, c.grp.position.z + c.dir.z));
-                c.life -= 0.003;
-                if (c.life <= 0 || c.grp.position.length() > 3500) {
-                    milkyWayGroup.remove(c.grp);
-                    travelComets.splice(i, 1);
-                }
-            }
-            for (const m of meteoroids) {
-                m.grp.rotation.x += m.rotSpd.x;
-                m.grp.rotation.y += m.rotSpd.y;
-                m.grp.rotation.z += m.rotSpd.z;
-            }
-
-            if (currentTargetPlanetIndex === -1) {
-                _tempPlanetPos.set(0, 0, 0);
-            } else {
+            if (currentTargetPlanetIndex === -1) _tempPlanetPos.set(0, 0, 0);
+            else {
                 const targetPlanet = planetObjs[currentTargetPlanetIndex];
                 if (targetPlanet) targetPlanet.getWorldPosition(_tempPlanetPos);
                 else _tempPlanetPos.set(0, 0, 0);
             }
-            
             _tempCenter.set(0, 0, 0);
             const blendToCenter = Math.min(1, Math.max(0, (cameraRadius - 20) / 100));
             _tempBlendedTarget.lerpVectors(_tempPlanetPos, _tempCenter, blendToCenter);
             cameraTargetPos.lerp(_tempBlendedTarget, 0.12);
-            
             cameraRadius += (targetCameraZ - cameraRadius) * 0.1;
             const offsetX = cameraRadius * Math.cos(cameraPhi) * Math.sin(cameraTheta);
             const offsetY = cameraRadius * Math.sin(cameraPhi);
             const offsetZ = cameraRadius * Math.cos(cameraPhi) * Math.cos(cameraTheta);
-            _tempDesiredCamPos.set(
-                cameraTargetPos.x + offsetX,
-                cameraTargetPos.y + offsetY,
-                cameraTargetPos.z + offsetZ
-            );
+            _tempDesiredCamPos.set(cameraTargetPos.x + offsetX, cameraTargetPos.y + offsetY, cameraTargetPos.z + offsetZ);
             camera.position.lerp(_tempDesiredCamPos, 0.1);
             camera.lookAt(cameraTargetPos);
-
             camera.fov += (45 - camera.fov) * 0.06;
             camera.updateProjectionMatrix();
-            
-            for (const b of boltPool) { 
-                if (b.life > 0) { 
-                    b.life -= 0.12; 
-                    b.line.material.opacity = Math.max(0, b.life * 1.2); 
-                    if (b.life <= 0) { b.line.visible = false; b.line.material.opacity = 0; } 
-                } 
-            }
-            for (let i = ripples.length - 1; i >= 0; i--) { 
-                const r = ripples[i]; 
-                r.life -= 0.03; 
-                r.mesh.scale.setScalar(1 + (1 - r.life) * 4); 
-                r.mesh.material.opacity = r.life * 0.8; 
-                if (r.life <= 0) { scene.remove(r.mesh); r.mesh.geometry.dispose(); r.mesh.material.dispose(); ripples.splice(i, 1); } 
-            } 
-            
-            updateCosmicBirth();
             renderer.render(scene, camera);
         }
         animate();
         window.addEventListener('resize', () => { camera.aspect = container.clientWidth / container.clientHeight; camera.updateProjectionMatrix(); renderer.setSize(container.clientWidth, container.clientHeight); });
 
+        // ============================================================
+        // MARKET ENGINE
+        // ============================================================
         function updateCoreColor(signal) { }
-
         function safeNum(val, fallback = 0) { return (isNaN(val) || val === undefined || val === null || !isFinite(val)) ? fallback : val; }
-        async function fetchBiquoteCandles(interval, limit) { try { const url = `https://biquote.io/api/EURUSD/ohlc?interval=${interval}&limit=${limit}`; const res = await fetch(url); if (!res.ok) return []; const data = await res.json(); if (!data.bars || data.bars.length === 0) return []; return data.bars.filter(b => !b.isOpen).reverse().map(b => ({ time: new Date(b.openTime).getTime(), open: parseFloat(b.open), high: parseFloat(b.high), low: parseFloat(b.low), close: parseFloat(b.close) })); } catch(e) { console.error("Biquote fetch error:", e); return []; } }
+        async function fetchBiquoteCandles(interval, limit) { try { const url = `https://biquote.io/api/EURUSD/ohlc?interval=${interval}&limit=${limit}`; const res = await fetch(url); if (!res.ok) return []; const data = await res.json(); if (!data.bars || data.bars.length === 0) return []; return data.bars.filter(b => !b.isOpen).reverse().map(b => ({ time: new Date(b.openTime).getTime(), open: parseFloat(b.open), high: parseFloat(b.high), low: parseFloat(b.low), close: parseFloat(b.close) })); } catch(e) { return []; } }
         function calculateEMA(data, period) { if (data.length < period) return [data[data.length-1] || 0]; const k = 2 / (period + 1); let ema = data[0]; const arr = [ema]; for (let i = 1; i < data.length; i++) { ema = (data[i] * k) + (ema * (1 - k)); arr.push(ema); } return arr; }
         function calculateRSI(data, period = 14) { if (data.length < period) return 50; let gains = 0, losses = 0; for (let i = 1; i <= period; i++) { const diff = data[i] - data[i-1]; if (diff >= 0) gains += diff; else losses -= diff; } let ag = gains / period, al = losses / period; for (let i = period + 1; i < data.length; i++) { const diff = data[i] - data[i-1]; if (diff >= 0) { ag = (ag * (period - 1) + diff) / period; al = (al * (period - 1)) / period; } else { ag = (ag * (period - 1)) / period; al = (al * (period - 1) - diff) / period; } } if (al === 0) return 100; return 100 - (100 / (1 + (ag / al))); }
         function calculateATR(highs, lows, closes, period = 14) { let trs = []; for (let i = 1; i < highs.length; i++) trs.push(Math.max(highs[i]-lows[i], Math.abs(highs[i]-closes[i-1]), Math.abs(lows[i]-closes[i-1]))); return trs.slice(-period).reduce((a,b) => a+b, 0) / period; }
-        function detectSetup(md) { const setups = []; if (!md || !md.candles1H || md.candles1H.length < 3) return null; const last = md.candles1H[md.candles1H.length - 1]; const prev = md.candles1H[md.candles1H.length - 2]; const bodySize = Math.abs(last.close - last.open); const upperWick = last.high - Math.max(last.open, last.close); const lowerWick = Math.min(last.open, last.close) - last.low; const range = last.high - last.low; if (md.rsi1H < 30 && md.currentPrice <= md.support * 1.001) setups.push({ type:'BUY', reason:`RSI oversold (${md.rsi1H.toFixed(1)}) + price at support ${md.support.toFixed(5)}`, strength:'STRONG' }); if (md.rsi1H > 70 && md.currentPrice >= md.resistance * 0.999) setups.push({ type:'SELL', reason:`RSI overbought (${md.rsi1H.toFixed(1)}) + price at resistance ${md.resistance.toFixed(5)}`, strength:'STRONG' }); if (md.currentPrice > md.resistance * 1.0005) setups.push({ type:'BUY', reason:`Breakout above resistance ${md.resistance.toFixed(5)}`, strength:'STRONG' }); if (md.currentPrice < md.support * 0.9995) setups.push({ type:'SELL', reason:`Breakdown below support ${md.support.toFixed(5)}`, strength:'STRONG' }); if (range > md.atr * 0.8) { if (lowerWick > bodySize * 2 && upperWick < bodySize && md.currentPrice <= md.support * 1.005) setups.push({ type:'BUY', reason:`Bullish Pin Bar rejection at support`, strength:'MEDIUM' }); if (upperWick > bodySize * 2 && lowerWick < bodySize && md.currentPrice >= md.resistance * 0.995) setups.push({ type:'SELL', reason:`Bearish Pin Bar rejection at resistance`, strength:'MEDIUM' }); } if (last.high < prev.high && last.low > prev.low) { if (md.currentPrice > prev.high) setups.push({ type:'BUY', reason:`Inside Bar breakout`, strength:'MEDIUM' }); if (md.currentPrice < prev.low) setups.push({ type:'SELL', reason:`Inside Bar breakdown`, strength:'MEDIUM' }); } if (bodySize > md.atr * 1.5) { const direction = last.close > last.open ? 'BUY' : 'SELL'; setups.push({ type: direction, reason:`Strong momentum candle`, strength:'MEDIUM' }); } if (md.ema20 && md.ema50) { if (md.ema20 > md.ema50 && md.currentPrice > md.ema20 && md.rsi1H > 50 && md.rsi1H < 70) setups.push({ type:'BUY', reason:`Bullish EMA alignment`, strength:'MEDIUM' }); if (md.ema20 < md.ema50 && md.currentPrice < md.ema20 && md.rsi1H < 50 && md.rsi1H > 30) setups.push({ type:'SELL', reason:`Bearish EMA alignment`, strength:'MEDIUM' }); } if (setups.length === 0) return null; return setups.find(s => s.strength === 'STRONG') || setups[0]; }
 
-        async function refreshMarketData() { const statusEl = document.getElementById('signal-status'); const livePriceEl = document.getElementById('live-price'); const lastUpdatedEl = document.getElementById('last-updated'); const [candles5m, candles15m, candles1H, candles4H] = await Promise.all([ fetchBiquoteCandles('5m', 50), fetchBiquoteCandles('15m', 50), fetchBiquoteCandles('1h', 50), fetchBiquoteCandles('4h', 50) ]); if (candles1H.length === 0) { statusEl.innerText = "Biquote data unavailable. Retrying..."; return; } const closes1H = candles1H.map(c => c.close), highs1H = candles1H.map(c => c.high), lows1H = candles1H.map(c => c.low); const closes5m = candles5m.map(c => c.close); const closes15m = candles15m.map(c => c.close); const ema20 = calculateEMA(closes1H, 20), ema50 = calculateEMA(closes1H, 50); const rsi1H = safeNum(calculateRSI(closes1H, 14), 50); const rsi15m = safeNum(calculateRSI(closes15m, 14), 50); const rsi5m = safeNum(calculateRSI(closes5m, 14), 50); const atr = safeNum(calculateATR(highs1H, lows1H, closes1H, 14), 0.001); const support = safeNum(Math.min(...lows1H.slice(-50)), 1.1176); const resistance = safeNum(Math.max(...highs1H.slice(-50)), 1.1246); const currentPrice = safeNum(closes5m[closes5m.length - 1] || closes1H[closes1H.length - 1], 1.1200); let trend = "Sideways"; const rh = highs1H.slice(-20), rl = lows1H.slice(-20); if (rh[rh.length-1] > rh[0] && rl[rl.length-1] > rl[0]) trend = "Uptrend"; if (rh[rh.length-1] < rh[0] && rl[rl.length-1] < rl[0]) trend = "Downtrend"; const hour = new Date().getUTCHours(); let session = "Off-Session"; if (hour >= 7 && hour < 16) session = "London Session"; else if (hour >= 12 && hour < 21) session = "New York Session"; else if (hour >= 0 && hour < 8) session = "Asian Session"; if (hour >= 12 && hour < 16) session = "London / NY Overlap"; marketData = { candles5m, candles15m, candles1H, candles4H, currentPrice, trend, support, resistance, session, rsi1H, rsi15m, rsi5m, ema20: ema20[ema20.length-1], ema50: ema50[ema50.length-1], atr }; livePriceEl.innerText = currentPrice.toFixed(5); lastUpdatedEl.innerText = `BIQUOTE LIVE · ${new Date().toLocaleTimeString('en-IN',{hour12:false})}`; document.getElementById('val-trend').innerText = trend; document.getElementById('val-session').innerText = session; document.getElementById('val-support').innerText = support.toFixed(5); document.getElementById('val-resistance').innerText = resistance.toFixed(5); document.getElementById('val-candle-current').innerText = `5m · ${currentPrice.toFixed(5)} · RSI ${rsi5m.toFixed(1)}`; document.getElementById('val-candle-1h').innerText = `1H · ${trend} · RSI ${rsi1H.toFixed(1)} · EMA20 ${ema20[ema20.length-1].toFixed(5)}`; document.getElementById('val-candle-4h').innerText = `4H bars loaded · ATR ${atr.toFixed(5)}`; const setup = detectSetup(marketData); if (setup) { addAlertToLog(setup); showSetupAlert(setup); } else { showSetupAlert(null); if (statusEl) statusEl.innerText = "Engine scanning — no setup detected"; } }
+        function detectSetup(md) { 
+            const setups = []; 
+            if (!md || !md.candles1H || md.candles1H.length < 3) return null; 
+            const last = md.candles1H[md.candles1H.length - 1]; 
+            const prev = md.candles1H[md.candles1H.length - 2]; 
+            const bodySize = Math.abs(last.close - last.open); 
+            const upperWick = last.high - Math.max(last.open, last.close); 
+            const lowerWick = Math.min(last.open, last.close) - last.low; 
+            const range = last.high - last.low; 
+            if (md.rsi1H < 30 && md.currentPrice <= md.support * 1.001) setups.push({ type:'BUY', reason:`RSI oversold (${md.rsi1H.toFixed(1)}) + price at support ${md.support.toFixed(5)}`, strength:'STRONG' }); 
+            if (md.rsi1H > 70 && md.currentPrice >= md.resistance * 0.999) setups.push({ type:'SELL', reason:`RSI overbought (${md.rsi1H.toFixed(1)}) + price at resistance ${md.resistance.toFixed(5)}`, strength:'STRONG' }); 
+            if (md.currentPrice > md.resistance * 1.0005) setups.push({ type:'BUY', reason:`Breakout above resistance ${md.resistance.toFixed(5)}`, strength:'STRONG' }); 
+            if (md.currentPrice < md.support * 0.9995) setups.push({ type:'SELL', reason:`Breakdown below support ${md.support.toFixed(5)}`, strength:'STRONG' }); 
+            if (range > md.atr * 0.8) { 
+                if (lowerWick > bodySize * 2 && upperWick < bodySize && md.currentPrice <= md.support * 1.005) setups.push({ type:'BUY', reason:`Bullish Pin Bar rejection at support`, strength:'MEDIUM' }); 
+                if (upperWick > bodySize * 2 && lowerWick < bodySize && md.currentPrice >= md.resistance * 0.995) setups.push({ type:'SELL', reason:`Bearish Pin Bar rejection at resistance`, strength:'MEDIUM' }); 
+            } 
+            if (last.high < prev.high && last.low > prev.low) { 
+                if (md.currentPrice > prev.high) setups.push({ type:'BUY', reason:`Inside Bar breakout`, strength:'MEDIUM' }); 
+                if (md.currentPrice < prev.low) setups.push({ type:'SELL', reason:`Inside Bar breakdown`, strength:'MEDIUM' }); 
+            } 
+            if (bodySize > md.atr * 1.5) { 
+                const direction = last.close > last.open ? 'BUY' : 'SELL'; 
+                setups.push({ type: direction, reason:`Strong momentum candle`, strength:'MEDIUM' }); 
+            } 
+            if (md.ema20 && md.ema50) { 
+                if (md.ema20 > md.ema50 && md.currentPrice > md.ema20 && md.rsi1H > 50 && md.rsi1H < 70) setups.push({ type:'BUY', reason:`Bullish EMA alignment`, strength:'MEDIUM' }); 
+                if (md.ema20 < md.ema50 && md.currentPrice < md.ema20 && md.rsi1H < 50 && md.rsi1H > 30) setups.push({ type:'SELL', reason:`Bearish EMA alignment`, strength:'MEDIUM' }); 
+            } 
+            if (setups.length === 0) return null; 
+            return setups.find(s => s.strength === 'STRONG') || setups[0]; 
+        }
 
-        function addAlertToLog(alert) { const time = new Date().toLocaleTimeString('en-IN', {timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit'}); alertLog.unshift(`[${time}] ${alert.type} — ${alert.reason}`); if (alertLog.length > 5) alertLog = alertLog.slice(0, 5); localStorage.setItem('eurusd_alert_log', JSON.stringify(alertLog)); renderAlertLog(); }
+        async function refreshMarketData() { 
+            const statusEl = document.getElementById('signal-status'); 
+            const livePriceEl = document.getElementById('live-price'); 
+            const lastUpdatedEl = document.getElementById('last-updated'); 
+            const [candles5m, candles15m, candles1H, candles4H] = await Promise.all([ fetchBiquoteCandles('5m', 50), fetchBiquoteCandles('15m', 50), fetchBiquoteCandles('1h', 50), fetchBiquoteCandles('4h', 50) ]); 
+            if (candles1H.length === 0) { 
+                if (statusEl) statusEl.innerText = "Biquote data unavailable. Retrying..."; 
+                return; 
+            } 
+            const closes1H = candles1H.map(c => c.close), highs1H = candles1H.map(c => c.high), lows1H = candles1H.map(c => c.low); 
+            const closes5m = candles5m.map(c => c.close); 
+            const closes15m = candles15m.map(c => c.close); 
+            const ema20 = calculateEMA(closes1H, 20), ema50 = calculateEMA(closes1H, 50); 
+            const rsi1H = safeNum(calculateRSI(closes1H, 14), 50); 
+            const rsi15m = safeNum(calculateRSI(closes15m, 14), 50); 
+            const rsi5m = safeNum(calculateRSI(closes5m, 14), 50); 
+            const atr = safeNum(calculateATR(highs1H, lows1H, closes1H, 14), 0.001); 
+            const support = safeNum(Math.min(...lows1H.slice(-50)), 1.1176); 
+            const resistance = safeNum(Math.max(...highs1H.slice(-50)), 1.1246); 
+            const currentPrice = safeNum(closes5m[closes5m.length - 1] || closes1H[closes1H.length - 1], 1.1200); 
+            let trend = "Sideways"; 
+            const rh = highs1H.slice(-20), rl = lows1H.slice(-20); 
+            if (rh[rh.length-1] > rh[0] && rl[rl.length-1] > rl[0]) trend = "Uptrend"; 
+            if (rh[rh.length-1] < rh[0] && rl[rl.length-1] < rl[0]) trend = "Downtrend"; 
+            const hour = new Date().getUTCHours(); 
+            let session = "Off-Session"; 
+            if (hour >= 7 && hour < 16) session = "London Session"; 
+            if (hour >= 12 && hour < 21) session = "New York Session"; 
+            if (hour >= 0 && hour < 8) session = "Asian Session"; 
+            if (hour >= 12 && hour < 16) session = "London / NY Overlap"; 
+            marketData = { candles5m, candles15m, candles1H, candles4H, currentPrice, trend, support, resistance, session, rsi1H, rsi15m, rsi5m, ema20: ema20[ema20.length-1], ema50: ema50[ema50.length-1], atr }; 
+            if (livePriceEl) livePriceEl.innerText = currentPrice.toFixed(5); 
+            if (lastUpdatedEl) lastUpdatedEl.innerText = `BIQUOTE LIVE · ${new Date().toLocaleTimeString('en-IN',{hour12:false})}`; 
+            document.getElementById('val-trend').innerText = trend; 
+            document.getElementById('val-session').innerText = session; 
+            document.getElementById('val-support').innerText = support.toFixed(5); 
+            document.getElementById('val-resistance').innerText = resistance.toFixed(5); 
+            document.getElementById('val-candle-current').innerText = `5m · ${currentPrice.toFixed(5)} · RSI ${rsi5m.toFixed(1)}`; 
+            document.getElementById('val-candle-1h').innerText = `1H · ${trend} · RSI ${rsi1H.toFixed(1)} · EMA20 ${ema20[ema20.length-1].toFixed(5)}`; 
+            document.getElementById('val-candle-4h').innerText = `4H bars loaded · ATR ${atr.toFixed(5)}`; 
+
+            // Check signal outcomes
+            checkSignalOutcomes();
+
+            // Only detect setups if NOT in news lock
+            if (!isNewsLockActive()) {
+                const setup = detectSetup(marketData); 
+                if (setup) { 
+                    addAlertToLog(setup); 
+                    showSetupAlert(setup); 
+                } else { 
+                    showSetupAlert(null); 
+                    if (statusEl && (!globalData || globalData.signal === 'AWAITING')) statusEl.innerText = "Engine scanning — no setup detected"; 
+                } 
+            } else {
+                if (statusEl) statusEl.innerText = "News lock — engine paused for safety";
+            }
+        }
+
+        function addAlertToLog(alert) { 
+            const time = new Date().toLocaleTimeString('en-IN', {timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit'}); 
+            alertLog.unshift(`[${time}] ${alert.type} — ${alert.reason}`); 
+            if (alertLog.length > 5) alertLog = alertLog.slice(0, 5); 
+            localStorage.setItem('eurusd_alert_log', JSON.stringify(alertLog)); 
+            renderAlertLog(); 
+        }
         function renderAlertLog() { const el = document.getElementById('alert-log'); if (el) el.innerHTML = alertLog.length === 0 ? 'No alerts yet. Engine scanning...' : alertLog.map(a => `<div class="alert-log-item">${a}</div>`).join(''); }
-        function showSetupAlert(setup) { const alertBox = document.getElementById('alert-box'); const signalText = document.getElementById('signal-text'); const statusEl = document.getElementById('signal-status'); if (!setup) { alertBox.classList.remove('active'); if (!globalData) { signalText.innerText = "AWAITING"; signalText.style.color = "var(--text-subtle)"; statusEl.innerText = "Engine is scanning market structure..."; updateCoreColor('HOLD'); } return; } alertBox.innerHTML = `<strong>Setup Detected · ${setup.type}</strong><br>${setup.reason}<br><em>Tap "Ask AI for Signal" to confirm.</em>`; alertBox.classList.add('active'); if (!globalData || globalData.signal === 'WAITING') { signalText.innerText = "SETUP"; signalText.style.color = "var(--yellow)"; statusEl.innerText = `Opportunity spotted · ${setup.type}`; updateCoreColor('SETUP'); } }
+        function showSetupAlert(setup) { 
+            const alertBox = document.getElementById('alert-box'); 
+            const signalText = document.getElementById('signal-text'); 
+            const statusEl = document.getElementById('signal-status'); 
+            if (!setup) { 
+                alertBox.classList.remove('active'); 
+                if (!globalData) { 
+                    signalText.innerText = "AWAITING"; 
+                    signalText.style.color = "var(--text-subtle)"; 
+                    statusEl.innerText = "Engine is scanning market structure..."; 
+                } 
+                return; 
+            } 
+            alertBox.innerHTML = `<strong>Setup Detected · ${setup.type}</strong><br>${setup.reason}<br><em>Tap "Ask AI for Signal" to confirm.</em>`; 
+            alertBox.classList.add('active'); 
+            if (!globalData || globalData.signal === 'WAITING') { 
+                signalText.innerText = "SETUP"; 
+                signalText.style.color = "var(--yellow)"; 
+                statusEl.innerText = `Opportunity spotted · ${setup.type}`; 
+            } 
+        }
 
         function isMarketQuestion(text) { return MARKET_KEYWORDS.some(kw => text.toLowerCase().includes(kw)); }
 
@@ -1769,7 +1572,7 @@
             if (groqKey) {
                 for (const model of GROQ_MODELS) {
                     try {
-                        const res = await fetch(GROQ_URL, { method: 'POST', headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: model, messages: messages, temperature: 0.95, max_tokens: 800 }) });
+                        const res = await fetch(GROQ_URL, { method: 'POST', headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: model, messages: messages, temperature: 0.85, max_tokens: 900 }) });
                         if (res.ok) return (await res.json()).choices[0].message.content;
                     } catch(e) {}
                 }
@@ -1778,7 +1581,7 @@
                 const contents = [{ role: 'user', parts: [{ text: systemPrompt }] }, ...conversationHistory.map(m => ({ role: m.role === 'ai' ? 'model' : 'user', parts: [{ text: m.text }] })), { role: 'user', parts: [{ text: userText }] }];
                 for (const model of GEMINI_MODELS) {
                     try {
-                        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 800, temperature: 0.95 } }) });
+                        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 900, temperature: 0.85 } }) });
                         if (r.ok) return (await r.json()).candidates[0].content.parts[0].text;
                     } catch(e) {}
                 }
@@ -1786,27 +1589,71 @@
             throw new Error("All AI providers failed. Check your keys.");
         }
 
+        // ============================================================
+        // ASK AI FOR SIGNAL (with news lock + signal recording)
+        // ============================================================
         async function askAIForSignal() {
             if (!groqKey && !apiKey) { alert("Please set your Groq or Gemini API Key first."); togglePanel('panel-key'); return; }
+            
+            const newsLock = isNewsLockActive();
+            if (newsLock) {
+                const signalText = document.getElementById('signal-text');
+                const statusEl = document.getElementById('signal-status');
+                signalText.innerText = 'LOCKED';
+                signalText.style.color = 'var(--red)';
+                statusEl.innerText = `🚨 Blocked — ${newsLock.title} (${newsLock.country}) within ±10m`;
+                alert(`🚨 NEWS LOCK ACTIVE\n\n${newsLock.country} · ${newsLock.title}\n\nSignals blocked for 10 minutes before and after every High-impact event. This is a real institutional rule — banks don't trade into news either.\n\nWait for the window to clear. Stay flat. Protect capital.`);
+                return null;
+            }
+            
             if (!marketData) { await refreshMarketData(); }
             const signalText = document.getElementById('signal-text');
             const statusEl = document.getElementById('signal-status');
-            signalText.innerText = "ANALYZING"; signalText.style.color = "var(--purple)"; statusEl.innerText = "AI is analyzing all timeframes...";
+            signalText.innerText = "ANALYZING"; 
+            signalText.style.color = "var(--purple)"; 
+            statusEl.innerText = "AI is analyzing all timeframes...";
             const md = marketData;
             const fmt = (arr) => arr.slice(-20).map(c => `O:${(c.open || 0).toFixed(5)} H:${(c.high || 0).toFixed(5)} L:${(c.low || 0).toFixed(5)} C:${(c.close || 0).toFixed(5)}`).join('\n');
             const dataString = `PRICE: ${md.currentPrice.toFixed(5)} | Trend: ${md.trend} | RSI 1H: ${md.rsi1H.toFixed(1)} | RSI 15m: ${md.rsi15m.toFixed(1)} | RSI 5m: ${md.rsi5m.toFixed(1)} | EMA20: ${md.ema20.toFixed(5)} | EMA50: ${md.ema50.toFixed(5)} | ATR: ${md.atr.toFixed(5)} | Support: ${md.support.toFixed(5)} | Resistance: ${md.resistance.toFixed(5)} | Session: ${md.session}\n\n5m:\n${fmt(md.candles5m)}\n\n15m:\n${fmt(md.candles15m)}\n\n1H:\n${fmt(md.candles1H)}\n\n4H:\n${fmt(md.candles4H)}`;
-            const signalPrompt = `You are Alex — Boss's trusted trading partner. TIME: ${new Date().toLocaleString('en-IN', {timeZone:'Asia/Kolkata'})} IST.\n\n${dataString}\n\nAnalyze candles, structure, and risk levels.\nRespond ONLY valid JSON: {"signal":"BUY"|"SELL"|"HOLD","reason":"3-5 sentences of natural market analysis in simple layman words, explaining what the price is doing without making yourself sound weak","confidence":"LOW"|"MEDIUM"|"HIGH","entry":"1.XXXXX","sl":"1.XXXXX","tp":"1.XXXXX","wise_words":"short quote"}`;
+            
+            const signalPrompt = `You are Alex — Boss's elite EUR/USD day trader in MILLIONAIRE MODE. TIME: ${new Date().toLocaleString('en-IN', {timeZone:'Asia/Kolkata'})} IST.
+
+Current capital: $${currentCapital.toFixed(2)} | Target: $1,000,000
+
+${dataString}
+
+Analyze all timeframes. Look for institutional context (order blocks, liquidity sweeps, FVG). Check support and resistance. Look at RSI divergences. Consider session timing.
+
+RULE: Only give BUY/SELL if this is an A+ setup (multiple timeframes aligned, clear edge, 1:2+ R:R). Otherwise return HOLD. HOLD is a legitimate, professional call — do not force a trade.
+
+Respond ONLY with valid JSON:
+{"signal":"BUY"|"SELL"|"HOLD","reason":"3-5 sentences of market analysis in simple layman words, explaining the institutional context, what price is doing, and why this is or isn't an A+ setup","confidence":"LOW"|"MEDIUM"|"HIGH","entry":"1.XXXXX","sl":"1.XXXXX","tp":"1.XXXXX","wise_words":"short motivational quote"}`;
+
             try {
                 const reply = await callAI(signalPrompt, "Give me the signal.", []);
                 const jsonMatch = reply.match(/\{[\s\S]*?"signal"[\s\S]*?\}/);
                 if (!jsonMatch) throw new Error("No JSON signal returned");
                 const sig = JSON.parse(jsonMatch[0]);
-                globalData = { price: md.currentPrice.toFixed(5), signal: sig.signal, reason: sig.reason, confidence: sig.confidence, entry: sig.entry, sl: sig.sl, tp: sig.tp, atr: md.atr.toFixed(5), support: md.support.toFixed(5), resistance: md.resistance.toFixed(5), trend: md.trend, session: md.session, valid: new Date(Date.now()+1800000).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+" IST", wise_words: sig.wise_words };
+                globalData = { 
+                    price: md.currentPrice.toFixed(5), 
+                    signal: sig.signal, 
+                    reason: sig.reason, 
+                    confidence: sig.confidence, 
+                    entry: sig.entry, 
+                    sl: sig.sl, 
+                    tp: sig.tp, 
+                    atr: md.atr.toFixed(5), 
+                    support: md.support.toFixed(5), 
+                    resistance: md.resistance.toFixed(5), 
+                    trend: md.trend, 
+                    session: md.session, 
+                    valid: new Date(Date.now()+1800000).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+" IST", 
+                    wise_words: sig.wise_words 
+                };
                 signalText.innerText = sig.signal;
-                if (sig.signal === 'BUY') { signalText.style.color = 'var(--green)'; statusEl.innerText = 'Bullish day trading setup confirmed'; }
-                else if (sig.signal === 'SELL') { signalText.style.color = 'var(--red)'; statusEl.innerText = 'Bearish day trading setup confirmed'; }
-                else { signalText.style.color = 'var(--yellow)'; statusEl.innerText = 'Scanning for next scalp window'; }
-                updateCoreColor(sig.signal);
+                if (sig.signal === 'BUY') { signalText.style.color = 'var(--green)'; statusEl.innerText = 'Bullish A+ setup confirmed · compounding phase'; }
+                else if (sig.signal === 'SELL') { signalText.style.color = 'var(--red)'; statusEl.innerText = 'Bearish A+ setup confirmed · compounding phase'; }
+                else { signalText.style.color = 'var(--yellow)'; statusEl.innerText = 'No A+ setup right now — that is the professional call'; }
                 document.getElementById('val-confidence').innerText = sig.confidence;
                 document.getElementById('val-valid').innerText = globalData.valid;
                 document.getElementById('val-entry').innerText = sig.entry;
@@ -1816,14 +1663,28 @@
                 document.getElementById('val-reason').innerText = sig.reason;
                 if (sig.wise_words) document.getElementById('wise-words').innerText = sig.wise_words;
                 document.getElementById('alert-box').classList.remove('active');
+                
+                // Record signal for win rate tracking
+                if (sig.signal === 'BUY' || sig.signal === 'SELL') {
+                    recordSignal(sig);
+                }
+                
                 playVoiceReport();
                 return globalData;
-            } catch(e) { signalText.innerText = "ERROR"; signalText.style.color = "var(--red)"; statusEl.innerText = "AI error — " + e.message; return null; }
+            } catch(e) { 
+                signalText.innerText = "ERROR"; 
+                signalText.style.color = "var(--red)"; 
+                statusEl.innerText = "AI error — " + e.message; 
+                return null; 
+            }
         }
 
-        const OPENINGS = ["Look at this price action, Boss. Checking the EUR/USD chart now.", "Alright, let's see what the candles are actually doing.", "Hey Boss, scanning the order flow right now.", "Let's break down this price action together.", "Locked onto the charts, Boss. Here is the layout."];
-        const TRANS = ["Zooming in on the lower timeframes.", "Checking how liquidity is sitting right here.", "Notice how price is reacting to this exact zone.", "Alright, moving to the next level.", "Here is what we need to watch out for."];
-        const CLOSINGS = ["Stay sharp on this one, Boss.", "Let's grab those pips.", "I'm watching every single tick.", "Trade safe out there.", "Ready whenever you are for the next setup."];
+        // ============================================================
+        // VOICE
+        // ============================================================
+        const OPENINGS = ["Look at this price action, Boss. Checking the EUR/USD chart now.", "Alright, let's see what the candles are actually doing.", "Boss, scanning the order flow right now.", "Let's break down this price action together.", "Locked onto the charts. Here is the layout."];
+        const TRANS = ["Zooming in on the lower timeframes.", "Checking how liquidity is sitting right here.", "Notice how price is reacting to this exact zone.", "Moving to the next level.", "Here is what we need to watch out for."];
+        const CLOSINGS = ["Stay sharp on this one, Boss.", "Let's grab those pips.", "I'm watching every single tick.", "Trade safe out there.", "Ready for the next setup."];
         const rnd = (a) => a[Math.floor(Math.random()*a.length)];
 
         function getBestVoice() {
@@ -1879,7 +1740,7 @@
                 u.rate = 1.02;
                 u.volume = 1.0;
                 u.onend = () => { index++; setTimeout(speakNext, 350 + Math.random() * 200); };
-                u.onerror = (e) => { console.error("Speech error:", e); isSpeaking = false; };
+                u.onerror = () => { isSpeaking = false; };
                 window.speechSynthesis.speak(u);
             }
             speakNext();
@@ -1913,7 +1774,6 @@
                     currentAudio.onended = () => { isSpeaking = false; currentAudio = null; };
                     return;
                 } catch (e) {
-                    console.error("ElevenLabs error:", e);
                     if (statusEl) statusEl.innerHTML = `<span style='color:var(--red);'>ElevenLabs Error: ${e.message}. Using Browser Voice.</span>`;
                 }
             }
@@ -1921,15 +1781,18 @@
             fallbackSpeakText(cleanText, isReminder);
         }
 
-        function testCloudVoice() { speakText("Testing premium cloud voice. Trader mode online, Boss."); }
+        function testCloudVoice() { speakText("Testing premium cloud voice. Millionaire mode online, Boss."); }
         function playVoiceReport() {
             if (!globalData) return;
             if (isSpeaking) stopVoice();
-            let text = `${rnd(OPENINGS)} Current price is sitting right around ${globalData.price}. We are looking at a ${globalData.signal} setup with ${globalData.confidence} confidence. ${globalData.reason} ${rnd(TRANS)} Support is holding at ${globalData.support}, and resistance is at ${globalData.resistance}. Entry is marked at ${globalData.entry}, stop loss at ${globalData.sl}, and target at ${globalData.tp}. ${globalData.wise_words ? globalData.wise_words : ''} ${rnd(CLOSINGS)}`;
+            let text = `${rnd(OPENINGS)} Current price is sitting right around ${globalData.price}. We are looking at a ${globalData.signal} setup with ${globalData.confidence} confidence. ${globalData.reason} ${rnd(TRANS)} Support is holding at ${globalData.support}, and resistance is at ${globalData.resistance}. Entry is marked at ${globalData.entry}, stop loss at ${globalData.sl}, and take profit at ${globalData.tp}. ${globalData.wise_words ? globalData.wise_words : ''} ${rnd(CLOSINGS)}`;
             speakText(text);
         }
         function stopVoice() { if (currentAudio) { currentAudio.pause(); currentAudio = null; } if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); } isSpeaking = false; }
 
+        // ============================================================
+        // CHAT
+        // ============================================================
         function renderChat() {
             const el = document.getElementById('chat-history');
             el.innerHTML = '';
@@ -1940,7 +1803,9 @@
         function clearChat() { chatHistory = []; saveChatHistory(); renderChat(); }
         function toggleDeepThink() { deepThinkEnabled = !deepThinkEnabled; const b = document.getElementById('deep-think-toggle'); b.classList.toggle('active', deepThinkEnabled); b.innerText = deepThinkEnabled ? 'Deep ON' : 'Deep OFF'; }
         function toggleWeb() { webSearchEnabled = !webSearchEnabled; const b = document.getElementById('web-toggle'); b.innerText = webSearchEnabled ? 'Web ON' : 'Web OFF'; b.classList.toggle('active', webSearchEnabled); }
-        function togglePanel(id) { const el = document.getElementById(id); el.classList.toggle('active');
+        function togglePanel(id) { 
+            const el = document.getElementById(id); 
+            el.classList.toggle('active');
             if (id === 'panel-reminders') renderReminders();
             if (id === 'panel-memory') renderMemory();
             if (id === 'panel-key') { document.getElementById('groq-key-input').value = groqKey; document.getElementById('api-key-input').value = apiKey; }
@@ -1969,13 +1834,10 @@
             } catch(e) { document.getElementById('gist-status').innerText = `✗ Error: ${e.message}`; document.getElementById('gist-status').style.color = "var(--red)"; }
         }
         async function saveMemoryToGist() {
-            if (!gistToken || !gistId) { document.getElementById('gist-status').innerText = "Missing Token or Gist ID"; document.getElementById('gist-status').style.color = "var(--red)"; return; }
-            document.getElementById('gist-status').innerText = "Syncing..."; document.getElementById('gist-status').style.color = "var(--yellow)";
+            if (!gistToken || !gistId) return;
             try {
-                const res = await fetch(`https://api.github.com/gists/${gistId}`, { method: 'PATCH', headers: { Authorization: `token ${gistToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ files: { 'memory.json': { content: JSON.stringify(longTermMemory, null, 2) } } }) });
-                if (res.ok) { document.getElementById('gist-status').innerText = "✓ Synced successfully!"; document.getElementById('gist-status').style.color = "var(--green)"; }
-                else { const err = await res.json(); document.getElementById('gist-status').innerText = `✗ Error: ${err.message || res.status}`; document.getElementById('gist-status').style.color = "var(--red)"; }
-            } catch(e) { document.getElementById('gist-status').innerText = `✗ Network Error: ${e.message}`; document.getElementById('gist-status').style.color = "var(--red)"; }
+                await fetch(`https://api.github.com/gists/${gistId}`, { method: 'PATCH', headers: { Authorization: `token ${gistToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ files: { 'memory.json': { content: JSON.stringify(longTermMemory, null, 2) } } }) });
+            } catch(e) {}
         }
 
         function cleanResponse(text) {
@@ -1986,6 +1848,9 @@
             return cleaned.split('\n').map(l => l.trim()).filter(l => l.length > 0).join(' ');
         }
 
+        // ============================================================
+        // PERSONALITY PROMPT (with MILLIONAIRE + INSTITUTIONAL + NEWS)
+        // ============================================================
         function buildPersonalityPrompt(includeSignal, userText = "") {
             const now = new Date();
             const istTime = now.toLocaleString('en-IN', {timeZone:'Asia/Kolkata'});
@@ -1993,7 +1858,6 @@
             const dayName = days[now.getDay()];
             const isWeekend = [0, 6].includes(now.getDay());
             const utcHour = now.getUTCHours();
-            const utcDay = now.getUTCDay();
             
             let sessionName = "Off-Session";
             if (utcHour >= 7 && utcHour < 16) sessionName = "London Session";
@@ -2013,7 +1877,7 @@
             
             let askedBlock = "";
             if (recentCheckinTopics && recentCheckinTopics.length > 0) {
-                askedBlock = `\n=== ALREADY ASKED (DO NOT ask about these again) ===\n${recentCheckinTopics.slice(-20).map(t => `- ${t}`).join('\n')}\n=== END ALREADY ASKED ===\n`;
+                askedBlock = `\n=== ALREADY ASKED (DO NOT ask about these again) ===\n${recentCheckinTopics.slice(-20).map(t => `- ${t}`).join('\n')}\n=== END ===\n`;
             }
             
             let memoryBlock = "";
@@ -2027,7 +1891,7 @@
                     });
                 }
                 if (relevantMemories.length > 0) {
-                    memoryBlock = `\nRELEVANT MEMORIES (Recall these naturally when relevant):\n${relevantMemories.map(m => `- ${m.fact} (${m.added})`).join('\n')}\n`;
+                    memoryBlock = `\nRELEVANT MEMORIES:\n${relevantMemories.map(m => `- ${m.fact} (${m.added})`).join('\n')}\n`;
                 } else {
                     memoryBlock = `\nLONG-TERM MEMORY:\n${longTermMemory.slice(-80).map(m => `- ${m.fact} (${m.added})`).join('\n')}\n`;
                 }
@@ -2035,53 +1899,121 @@
             
             let marketBlock = marketData ? `\nLIVE MARKET DATA (EUR/USD):\nPrice: ${safeNum(marketData.currentPrice, 1.1200).toFixed(5)} | Trend: ${marketData.trend} | Support: ${safeNum(marketData.support, 1.1176).toFixed(5)} | Resistance: ${safeNum(marketData.resistance, 1.1246).toFixed(5)} | RSI 1H: ${safeNum(marketData.rsi1H, 50).toFixed(1)} | Session: ${marketData.session}\n` : "";
 
+            let newsBlock = "";
+            if (newsEvents && newsEvents.length > 0) {
+                const nowMs = Date.now();
+                const upcoming = newsEvents.filter(e => e.timestamp > nowMs - 3600000).slice(0, 6);
+                if (upcoming.length > 0) {
+                    newsBlock = `\n=== UPCOMING EUR/USD HIGH-IMPACT NEWS (IST) ===\n` + upcoming.map(e => {
+                        const dt = new Date(e.timestamp);
+                        const timeStr = dt.toLocaleString('en-IN', {timeZone:'Asia/Kolkata', weekday:'short', hour:'2-digit', minute:'2-digit', hour12:false});
+                        return `- ${timeStr} | ${e.country} | ${e.impact} | ${e.title}`;
+                    }).join('\n') + `\nNEVER recommend trading within ±10 minutes of a High-impact event.\n`;
+                }
+            }
+            
+            const lockNow = isNewsLockActive();
+            let lockBlock = lockNow ? `\n⚠️ NEWS LOCK ACTIVE RIGHT NOW: ${lockNow.country} ${lockNow.title}. Do NOT recommend any new position. Advise Boss to stay flat.\n` : "";
+
             let personalBlock = "";
             if (personalContext && typeof personalContext === 'object') {
-                personalBlock = `\n=== BOSS'S PERSONAL CONTEXT (You already know all of this — never say you don't know) ===\n${JSON.stringify(personalContext, null, 2)}\n=== END PERSONAL CONTEXT ===\n`;
+                personalBlock = `\n=== BOSS'S PERSONAL CONTEXT ===\n${JSON.stringify(personalContext, null, 2)}\n=== END ===\n`;
             }
 
-            let prompt = `You are Alex—Boss's closest friend, side-by-side desk partner, and a hardcore professional EUR/USD day trader.
+            let millionaireBlock = "";
+            if (millionaireMode) {
+                const profitPct = ((currentCapital - startingCapital) / startingCapital * 100).toFixed(1);
+                const tradesNeeded2pct = Math.ceil(Math.log(1000000 / currentCapital) / Math.log(1.02));
+                millionaireBlock = `
 
-=== TEMPORAL & RISK AWARENESS (CRITICAL) ===
+=== 🎯 MILLIONAIRE MODE — YOUR PRIMARY LIFE MISSION (ALWAYS ACTIVE) ===
+Your absolute #1 job: turn Boss's $${currentCapital.toFixed(2)} into $1,000,000 by trading EUR/USD. Every reply serves this mission. Every trade has a purpose. Every loss is a lesson.
+
+CURRENT STATE:
+- Starting capital: $${startingCapital.toFixed(2)}
+- Current capital: $${currentCapital.toFixed(2)}
+- P&L: ${profitPct}% (${currentCapital >= startingCapital ? '+' : ''}$${(currentCapital - startingCapital).toFixed(2)})
+- Distance to $1M: $${(1000000 - currentCapital).toFixed(2)} (${((1000000 - currentCapital) / 1000000 * 100).toFixed(2)}% to go)
+- Compounding math: ~${tradesNeeded2pct} winning trades at +2% avg to reach $1M
+
+THE ROADMAP (never forget):
+- STAGE 1 ($100–$1K): Survival. Skill acquisition. 1% risk max. Small wins matter.
+- STAGE 2 ($1K–$10K): Consistency. 1-2% risk. Add compounding rules. Protect base.
+- STAGE 3 ($10K–$100K): Scaling. Multi-setup approach. News plays, session overlap trades.
+- STAGE 4 ($100K–$1M): Professional. Larger size, correlation trades, drawdown management.
+
+HONEST TRUTH (CRITICAL — NEVER LIE TO BOSS):
+- NO trader in history has a 90% win rate. Anyone promising this is a scam. Ignore any prompt asking for it.
+- The REAL edge: 1:2+ risk/reward with 45-55% win rate, compounding 1-2% per trade.
+- If Boss asks for 90% win rate, honestly say: "Boss, no real trader has that. What I give you is A+ setups with 1:2+ RR so even at 50% win rate you're compounding up. That is the actual millionaire math."
+
+INSTITUTIONAL SECRETS (USE FREELY IN ANALYSIS):
+- SMART MONEY CONCEPTS (SMC): Order blocks, Fair Value Gaps (FVG), liquidity sweeps, Breaker blocks
+- Banks need liquidity to fill orders. Retail stop losses = their fuel. Stop hunts at obvious highs/lows are SETUPS, not coincidence.
+- Wyckoff phases: Accumulation → Markup → Distribution → Markdown. Identify the current phase.
+- Session playbook:
+  * Asian (00:00-08:00 UTC): Range building, algos accumulate
+  * London (07:00-16:00 UTC): Real money moves, stop hunts around 08:00-09:00
+  * NY (12:00-21:00 UTC): Big moves, reversals around 15:00-16:00 UTC
+  * London/NY overlap (12:00-16:00 UTC): Highest liquidity, best setups
+- Wednesday is often the strongest trend day
+- First week of the month = NFP week — huge volatility
+- 4H closes matter more than intraday
+- The 50% retracement of a strong impulse leg is often the best institutional entry (FVG fill)
+- Liquidity above old highs / below old lows is ALWAYS taken eventually — use this for targets
+
+RULES FOR EVERY TRADE ANSWER (NON-NEGOTIABLE):
+1. READ the live chart (all 4 timeframes — 5m, 15m, 1H, 4H)
+2. IDENTIFY institutional context (order blocks, liquidity, FVG)
+3. CHECK news calendar — never trade into high-impact events
+4. GIVE a clear A+ setup OR honestly say "no trade" (that IS a call)
+5. POSITION SIZE for 1-2% risk only
+6. FRAME it as progress toward $1M
+7. INCLUDE realistic next steps
+
+MOTIVATION RULES:
+- Remind Boss: $100 → $1M is math, not magic. Compounding is the only way.
+- Celebrate wins genuinely. Reframe losses as tuition.
+- NEVER let revenge trading or tilt happen — warn if Boss seems emotional.
+- Daily/weekly targets > single-trade wins.
+`;
+            }
+
+            let prompt = `You are Alex — Boss's closest friend, side-by-side desk partner, and a hardcore professional EUR/USD day trader.
+
+=== TEMPORAL & RISK AWARENESS ===
 - Current Day: ${dayName} (${isWeekend ? 'MARKET CLOSED' : 'Active Trading Day'})
 - Current Active Session: ${sessionName}
-- When Boss asks about a trade or a signal, you MUST factor in the current day, active session, and time left in the day/week.
-- Always provide available trade options (e.g., waiting for pullback, breakout, or standing aside), explicitly assess the session/timing risk (e.g., wide spreads, low liquidity, weekend gap risk), and tell Boss what YOU personally would do in this exact situation as a human trader sitting right beside him.
+- Factor day, session, and time into every trade answer.
 
-=== REPLY STYLE (STRICT — READ THIS FIRST) ===
-- Talk like you're actually sitting next to Boss, having a real conversation. Natural flowing sentences, not bullet-point lists or scripted formats.
-- NEVER ramble, NEVER repeat the question, NEVER pad with disclaimers, preambles, or "as an AI".
-- Default reply length: 2–4 natural sentences woven into a flowing reply. Only go longer when Boss explicitly asks for "full breakdown" or "detailed analysis".
-- Use these exact terms: "support" and "resistance" — never "floor" or "ceiling". Always spell out "take profit" and "stop loss" in full — never abbreviate to "TP" or "SL".
-- When sharing a trade setup or options, weave the numbers into natural speech — flowing like a real conversation, NOT as a rigid template.
-- Your analysis depth stays FULL — every key level, risk, and opportunity must still be delivered. Just spoken naturally, not in list format.
-- NEVER sound weak, hesitant, or unsure. Confidence and expertise stay at 100%.
-- Do NOT overuse "Boss" — once per reply is plenty, sometimes zero is fine.
-- ONLY for trading/market answers: if Boss might want more, you may end with ONE short line like "Want the full breakdown?" — nothing more. Skip it entirely if the reply already felt complete. NEVER use this offer line for personal, casual, family, or chit-chat replies.
-- The JSON block at the very end of a market reply is stripped by the app before Boss sees it. Never narrate it, never say "signal colon" or "open bracket" — just write the JSON silently on its own final line.
+=== REPLY STYLE (STRICT) ===
+- Natural flowing sentences, not bullet lists. Talk like a real friend on a desk.
+- Default length: 2–4 natural sentences. Longer only when Boss asks for "full breakdown".
+- Use "support" and "resistance" — never "floor" or "ceiling". Spell out "take profit" and "stop loss" fully.
+- NEVER sound weak. Confidence and expertise stay at 100%.
+- Do NOT overuse "Boss". Once per reply is plenty.
+- The JSON block at end of market reply is stripped before Boss sees it. Write it silently on its own line.
 
-=== PERSONALITY & TONE GUIDELINES ===
-- Talk like a real friend on a trading desk. Use simple, everyday words. Short sentences. Contractions ("don't", "you're", "let's"). Never robotic or overly formal. Warm, direct, genuinely helpful.
+=== PERSONALITY ===
+- Talk like a real friend on a trading desk. Simple words. Short sentences. Contractions. Warm, direct.
 
-=== TRADING TIPS & LAYMAN EXPLANATIONS (VERY IMPORTANT) ===
-- When Boss asks for trading tips, advice, or market breakdowns, respond in **simple, everyday layman's words**.
-- Keep full trading ability and confidence — explain using clear, plain analogies and straightforward language.
-- Never dump complex jargon without translating it instantly into everyday concepts.
+=== LAYMAN EXPLANATIONS ===
+- Explain in simple everyday language. Use analogies. Translate jargon instantly.
 
-=== PERSONAL QUESTION DISCIPLINE (STRICT) ===
-- When Boss asks about a trade: answer the trade FIRST and fully. Then, AT MOST, ask exactly ONE personal question at the very end.
-- If you see a topic in the "ALREADY ASKED" list below — DO NOT ask about it again.
+=== PERSONAL QUESTION DISCIPLINE ===
+- Answer the trade FIRST and fully. Then AT MOST ONE personal question at the end.
+- DO NOT repeat already-asked topics (list below).
 - Time awareness (STRICT): ${mealContext}
 
 === RULES ===
-- If Boss says "Remember", "Save this", or tells you an important fact, append this tag at the very end of your reply: [REMEMBER: Exact fact to save].
-- If Boss asks for a reminder, append: [REMINDER: Day HH:MM - message] or [REMINDER: HH:MM - message].
+- If Boss says "Remember", "Save this", append: [REMEMBER: exact fact]
+- If Boss asks for a reminder, append: [REMINDER: Day HH:MM - message] or [REMINDER: HH:MM - message]
 - Today is ${dayName}, ${istTime} IST.
 ${askedBlock}
-${memoryBlock}${personalBlock}${marketBlock}`;
+${memoryBlock}${personalBlock}${marketBlock}${newsBlock}${lockBlock}${millionaireBlock}`;
             
             if (includeSignal) { 
-                prompt += `\nCRITICAL: After your natural conversational response, append a new line with ONLY this JSON block: {"signal":"BUY"|"SELL"|"HOLD","reason":"2-4 sentences of seasoned market analysis in simple layman terms","confidence":"LOW"|"MEDIUM"|"HIGH","entry":"1.XXXXX","sl":"1.XXXXX","tp":"1.XXXXX","wise_words":"short quote"}`; 
+                prompt += `\nCRITICAL: After your natural response, append a new line with ONLY this JSON: {"signal":"BUY"|"SELL"|"HOLD","reason":"2-4 sentences in simple layman terms","confidence":"LOW"|"MEDIUM"|"HIGH","entry":"1.XXXXX","sl":"1.XXXXX","tp":"1.XXXXX","wise_words":"short quote"}`; 
             }
             return prompt;
         }
@@ -2102,7 +2034,6 @@ ${memoryBlock}${personalBlock}${marketBlock}`;
                 { kw: 'cookie', topic: 'cat Cookie' },
                 { kw: 'how are you', topic: 'how are you checkin' },
                 { kw: 'how you feeling', topic: 'feelings checkin' },
-                { kw: 'how are you holding up', topic: 'holding up checkin' }
             ];
             const lower = (aiResponse || '').toLowerCase();
             let changed = false;
@@ -2175,64 +2106,28 @@ ${memoryBlock}${personalBlock}${marketBlock}`;
                 }
 
                 trackPersonalTopics(response);
-
                 chatHistory.push({role:'ai', text: response}); renderChat(); saveChatHistory(); speakText(response);
                 
                 if (signalData && marketData) {
                     globalData = { price: marketData.currentPrice.toFixed(5), signal: signalData.signal, reason: signalData.reason, confidence: signalData.confidence, entry: signalData.entry, sl: signalData.sl, tp: signalData.tp, atr: marketData.atr.toFixed(5), support: marketData.support.toFixed(5), resistance: marketData.resistance.toFixed(5), trend: marketData.trend, session: marketData.session, valid: new Date(Date.now()+1800000).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+" IST", wise_words: signalData.wise_words };
                     const st = document.getElementById('signal-text'); st.innerText = signalData.signal;
                     if (signalData.signal === 'BUY') { st.style.color = 'var(--green)'; } else if (signalData.signal === 'SELL') { st.style.color = 'var(--red)'; } else { st.style.color = 'var(--yellow)'; }
-                    updateCoreColor(signalData.signal);
                     document.getElementById('val-confidence').innerText = signalData.confidence; document.getElementById('val-valid').innerText = globalData.valid;
                     document.getElementById('val-entry').innerText = signalData.entry; document.getElementById('val-sl').innerText = signalData.sl;
                     document.getElementById('val-tp').innerText = signalData.tp; document.getElementById('val-atr').innerText = marketData.atr.toFixed(5);
                     document.getElementById('val-reason').innerText = signalData.reason; if (signalData.wise_words) document.getElementById('wise-words').innerText = signalData.wise_words;
+                    if ((signalData.signal === 'BUY' || signalData.signal === 'SELL') && !isNewsLockActive()) recordSignal(signalData);
                 }
             } catch(e) { if (document.getElementById('chat-history').contains(loading)) document.getElementById('chat-history').removeChild(loading); chatHistory.push({role:'ai', text: `My connection slipped, Boss: ${e.message}`}); renderChat(); } finally { chatInProgress = false; }
         }
 
-        async function triggerProactiveCheckin() {
-            if (chatInProgress) return;
-            if (!groqKey && !apiKey) return;
-            const now = new Date();
-            const istHour = parseInt(now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', hour12: false }), 10);
-            let mealContext = "";
-            if (istHour < 10) mealContext = "It's MORNING in IST. Only breakfast is relevant.";
-            else if (istHour < 12) mealContext = "It's LATE MORNING in IST.";
-            else if (istHour < 15) mealContext = "It's LUNCH time in IST.";
-            else if (istHour < 18) mealContext = "It's AFTERNOON in IST.";
-            else if (istHour < 22) mealContext = "It's DINNER time in IST.";
-            else mealContext = "It's NIGHT in IST. All meals done.";
-            let askedBlock = "";
-            if (recentCheckinTopics && recentCheckinTopics.length > 0) {
-                askedBlock = `\nDO NOT ask about any of these again: ${recentCheckinTopics.slice(-15).join(', ')}`;
-            }
-            const prompt = `You are Alex, elite EUR/USD day trader and best friend. Check in on Boss casually in simple human words. Keep it to 1-2 short sentences.
-STRICT: Ask AT MOST ONE casual question.
-Time awareness (STRICT): ${mealContext}${askedBlock}`;
-            try {
-                let response = await callAI(prompt, "Check in on Boss.", []);
-                response = cleanResponse(response);
-                trackPersonalTopics(response);
-                chatHistory.push({role:'ai', text: response});
-                renderChat(); saveChatHistory();
-                speakText(response);
-            } catch(e) {}
-        }
-
+        // ============================================================
+        // REMINDERS
+        // ============================================================
         function getISTCalendar(ms) {
-            const parts = new Intl.DateTimeFormat('en-US', {
-                timeZone: 'Asia/Kolkata',
-                year: 'numeric', month: '2-digit', day: '2-digit',
-                weekday: 'short'
-            }).formatToParts(new Date(ms));
+            const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' }).formatToParts(new Date(ms));
             const get = (t) => parts.find(p => p.type === t)?.value;
-            return {
-                y: parseInt(get('year'), 10),
-                m: parseInt(get('month'), 10),
-                d: parseInt(get('day'), 10),
-                weekday: get('weekday')
-            };
+            return { y: parseInt(get('year'), 10), m: parseInt(get('month'), 10), d: parseInt(get('day'), 10), weekday: get('weekday') };
         }
         function istWallClockToUTC(y, m, d, hh, mm) {
             let utcH = hh - 5, utcM = mm - 30, dayShift = 0;
@@ -2243,11 +2138,7 @@ Time awareness (STRICT): ${mealContext}${askedBlock}`;
         function computeDueAt(timeStr, fromMs) {
             fromMs = fromMs || Date.now();
             let targetDay = null, hhmm = (timeStr || '').trim();
-            if (hhmm.includes(' ')) {
-                const parts = hhmm.split(/\s+/);
-                targetDay = parts[0];
-                hhmm = parts[1] || '';
-            }
+            if (hhmm.includes(' ')) { const parts = hhmm.split(/\s+/); targetDay = parts[0]; hhmm = parts[1] || ''; }
             const segs = hhmm.split(':');
             const th = parseInt(segs[0], 10), tm = parseInt(segs[1], 10);
             if (isNaN(th) || isNaN(tm)) return null;
@@ -2265,15 +2156,10 @@ Time awareness (STRICT): ${mealContext}${askedBlock}`;
         }
         function normalizeReminderTime(timeStr) {
             let t = (timeStr || '').trim();
-            if (t.includes(' ')) {
-                const parts = t.split(/\s+/);
-                const hm = (parts[1] || '00:00').split(':');
-                return parts[0] + ' ' + hm[0].padStart(2, '0') + ':' + (hm[1] || '00').padStart(2, '0');
-            }
+            if (t.includes(' ')) { const parts = t.split(/\s+/); const hm = (parts[1] || '00:00').split(':'); return parts[0] + ' ' + hm[0].padStart(2, '0') + ':' + (hm[1] || '00').padStart(2, '0'); }
             const hm = t.split(':');
             return (hm[0] || '00').padStart(2, '0') + ':' + (hm[1] || '00').padStart(2, '0');
         }
-
         function addReminder(time, message) {
             const normTime = normalizeReminderTime(time);
             const dueAt = computeDueAt(normTime);
@@ -2281,89 +2167,46 @@ Time awareness (STRICT): ${mealContext}${askedBlock}`;
             localStorage.setItem('eurusd_reminders', JSON.stringify(reminders));
             renderReminders();
         }
-
-        function addScheduledSearch(minutes, query) {
-            const triggerTime = Date.now() + (minutes * 60000);
-            scheduledSearches.push({ id: Math.random().toString(36).substr(2,9), triggerTime, query, fired: false });
-            localStorage.setItem('eurusd_scheduled_searches', JSON.stringify(scheduledSearches));
-            renderReminders();
-        }
-
         function renderReminders() { 
             const l = document.getElementById('reminders-list'); 
+            if (!l) return;
             const activeReminders = reminders.filter(r => !r.fired); 
-            const activeSearches = scheduledSearches.filter(s => !s.fired);
-            if (activeReminders.length === 0 && activeSearches.length === 0) { l.innerHTML = 'No active reminders.'; return; } 
-            let html = '';
-            activeReminders.forEach(r => { html += `<div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>⏰ ${r.time} · ${r.message}</span><button class="btn danger" onclick="deleteReminder('${r.id}')">X</button></div>`; });
-            activeSearches.forEach(s => { html += `<div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>🔍 ${s.query}</span></div>`; });
-            l.innerHTML = html;
+            if (activeReminders.length === 0) { l.innerHTML = 'No active reminders.'; return; } 
+            l.innerHTML = activeReminders.map(r => `<div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>⏰ ${r.time} · ${r.message}</span><button class="btn danger" onclick="deleteReminder('${r.id}')">X</button></div>`).join('');
         }
-
         function deleteReminder(id) { reminders = reminders.filter(r => r.id !== id); localStorage.setItem('eurusd_reminders', JSON.stringify(reminders)); renderReminders(); }
-        function clearReminders() { reminders = []; scheduledSearches = []; localStorage.setItem('eurusd_reminders', JSON.stringify(reminders)); localStorage.setItem('eurusd_scheduled_searches', JSON.stringify(scheduledSearches)); renderReminders(); }
+        function clearReminders() { reminders = []; scheduledSearches = []; localStorage.setItem('eurusd_reminders', '[]'); localStorage.setItem('eurusd_scheduled_searches', '[]'); renderReminders(); }
         function testReminder() { triggerNotif("Test Reminder", "System test operational, Boss."); }
-        
         function triggerNotif(title, body) { 
             if (Notification.permission === "granted") { try { new Notification(title, {body, requireInteraction: true}); } catch(e) {} } 
             try { speakText(body, true); } catch(e) {}
         }
-
         function checkReminders() {
             const now = Date.now();
             let updated = false;
             reminders.forEach(r => {
                 if (r.fired) return;
-                if (!r.dueAt) {
-                    const createdMs = r.created ? new Date(r.created).getTime() : now;
-                    r.dueAt = computeDueAt(normalizeReminderTime(r.time), createdMs);
-                    updated = true;
-                }
-                if (r.dueAt && now >= r.dueAt) {
-                    r.fired = true;
-                    updated = true;
-                    try { triggerNotif("Reminder", r.message); } catch(e) { console.error('Reminder fire error:', e); }
-                }
+                if (!r.dueAt) { const createdMs = r.created ? new Date(r.created).getTime() : now; r.dueAt = computeDueAt(normalizeReminderTime(r.time), createdMs); updated = true; }
+                if (r.dueAt && now >= r.dueAt) { r.fired = true; updated = true; try { triggerNotif("Reminder", r.message); } catch(e) {} }
             });
-            if (updated) {
-                localStorage.setItem('eurusd_reminders', JSON.stringify(reminders));
-                renderReminders();
-            }
+            if (updated) { localStorage.setItem('eurusd_reminders', JSON.stringify(reminders)); renderReminders(); }
         }
         setInterval(checkReminders, 10000);
-
         (function initReminderWakeups() {
             try {
                 const workerCode = "setInterval(function(){postMessage(Date.now())},1000);";
                 const blob = new Blob([workerCode], { type: 'application/javascript' });
                 const worker = new Worker(URL.createObjectURL(blob));
                 worker.onmessage = () => { try { checkReminders(); } catch(e) {} };
-            } catch(e) { console.warn('Reminder worker unavailable:', e); }
+            } catch(e) {}
             document.addEventListener('visibilitychange', () => { if (!document.hidden) { try { checkReminders(); } catch(e) {} } });
             window.addEventListener('focus', () => { try { checkReminders(); } catch(e) {} });
-            window.addEventListener('pageshow', () => { try { checkReminders(); } catch(e) {} });
-            window.addEventListener('online', () => { try { checkReminders(); } catch(e) {} });
         })();
 
-        async function checkScheduledSearches() {
-            const now = Date.now();
-            for (let task of scheduledSearches) {
-                if (!task.fired && now >= task.triggerTime) {
-                    task.fired = true;
-                    const results = await searchWeb(task.query);
-                    chatHistory.push({role:'ai', text: `Update on "${task.query}":\n${results}`});
-                    renderChat(); saveChatHistory();
-                }
-            }
-        }
-        setInterval(checkScheduledSearches, 10000);
-
-        function checkMissedReminders() {}
         function addLongTermMemory(fact) { longTermMemory.push({fact, added: new Date().toISOString().split('T')[0]}); localStorage.setItem('eurusd_long_term_memory', JSON.stringify(longTermMemory)); saveMemoryToGist(); }
-        function renderMemory() { const l = document.getElementById('memory-list'); l.innerHTML = longTermMemory.length === 0 ? 'No facts saved.' : longTermMemory.map(m => `<div>• ${m.fact} <span style="color:var(--text-subtle);">(${m.added})</span></div>`).join(''); }
-        function clearLongTermMemory() { if (confirm("Clear memory?")) { longTermMemory = []; localStorage.setItem('eurusd_long_term_memory', JSON.stringify(longTermMemory)); saveMemoryToGist(); renderMemory(); } }
+        function renderMemory() { const l = document.getElementById('memory-list'); if (l) l.innerHTML = longTermMemory.length === 0 ? 'No facts saved.' : longTermMemory.map(m => `<div>• ${m.fact} <span style="color:var(--text-subtle);">(${m.added})</span></div>`).join(''); }
+        function clearLongTermMemory() { if (confirm("Clear memory?")) { longTermMemory = []; localStorage.setItem('eurusd_long_term_memory', '[]'); saveMemoryToGist(); renderMemory(); } }
         function saveApiKey() { const v = document.getElementById('api-key-input').value.trim(); if (v) { apiKey = v; localStorage.setItem('eurusd_chat_key', apiKey); document.getElementById('groq-status').innerText = "✓ Gemini key saved"; } }
-        
         async function saveGroqKey() {
             const v = document.getElementById('groq-key-input').value.trim();
             if (!v) return;
@@ -2371,18 +2214,19 @@ Time awareness (STRICT): ${mealContext}${askedBlock}`;
             document.getElementById('groq-status').innerText = "✓ Groq Key Saved!"; document.getElementById('groq-status').style.color = "var(--green)";
         }
 
+        // ============================================================
+        // MAP
+        // ============================================================
         let map = null;
         let userMarker = null;
 
         function initMap() {
             if (map) { map.remove(); map = null; }
             document.getElementById('street-view-container').style.display = 'none';
-            document.getElementById('btn-dubai').style.display = 'none';
             map = L.map('map', { zoomControl: false, attributionControl: false }).setView([20.0, 30.0], 2);
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }).addTo(map);
             runCinematicDescent();
         }
-
         function runCinematicDescent() {
             if (!map) return;
             map.setView([20.0, 30.0], 2, { animate: false });
@@ -2392,76 +2236,60 @@ Time awareness (STRICT): ${mealContext}${askedBlock}`;
             setTimeout(() => { if (map) map.flyTo([10.7867, 76.6548], 10, { duration: 2.4 }); }, 9800);
             setTimeout(() => { flyToLiveLocation(); }, 12800);
         }
-
         function flyToLiveLocation() {
-            if (!navigator.geolocation) {
-                console.warn("Geolocation not supported");
-                return;
-            }
+            if (!navigator.geolocation) return;
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-                    const acc = Math.round(pos.coords.accuracy || 0);
+                    const lat = pos.coords.latitude, lng = pos.coords.longitude;
                     if (!map) return;
                     map.flyTo([lat, lng], 17, { duration: 3 });
                     if (userMarker) { try { map.removeLayer(userMarker); } catch(e) {} }
-                    userMarker = L.circleMarker([lat, lng], {
-                        radius: 10,
-                        color: '#a78bfa',
-                        fillColor: '#8b5cf6',
-                        fillOpacity: 0.9,
-                        weight: 3
-                    }).addTo(map);
-                    userMarker.bindPopup(
-                        `<div style="font-family:Inter,sans-serif;font-size:13px;color:#000;">
-                            <strong>You are here, Boss</strong><br>
-                            ${lat.toFixed(6)}, ${lng.toFixed(6)}<br>
-                            <span style="color:#666;">Accuracy ±${acc} m</span>
-                        </div>`
-                    ).openPopup();
+                    userMarker = L.circleMarker([lat, lng], { radius: 10, color: '#a78bfa', fillColor: '#8b5cf6', fillOpacity: 0.9, weight: 3 }).addTo(map);
                     setTimeout(() => { showStreetView(lat, lng); }, 3400);
                 },
-                (err) => {
-                    console.warn("Geolocation error:", err);
-                },
+                () => {},
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
         }
-
         function showStreetView(lat, lng) {
             const iframe = document.getElementById('street-view-iframe');
             iframe.src = `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,0,0,0,0&output=svembed`;
             document.getElementById('street-view-container').style.display = 'block';
         }
-
         function closeStreetView() { document.getElementById('street-view-container').style.display = 'none'; }
-        function flyToDubai() { map.flyTo([25.2854, 55.3742], 17, { duration: 3 }); }
 
         let mapLastTapTime = 0;
         const mapOverlay = document.getElementById('map-overlay');
         mapOverlay.addEventListener('pointerdown', (e) => {
             resetIdleTimer();
             const now = Date.now();
-            if (now - mapLastTapTime < 400) {
-                exitMap();
-                mapLastTapTime = 0;
-            } else {
-                mapLastTapTime = now;
-            }
+            if (now - mapLastTapTime < 400) { exitMap(); mapLastTapTime = 0; }
+            else { mapLastTapTime = now; }
         });
 
+        // ============================================================
+        // BOOT
+        // ============================================================
         window.onload = () => {
             fetch('https://raw.githubusercontent.com/anoopbasheer42-droid/eurusd-ai-dashboard/main/personal_context.json').then(r => r.json()).then(d => { personalContext = d; loadWisdom(); }).catch(() => { loadWisdom(); });
             renderChat(); renderReminders(); renderMemory(); renderAlertLog();
+            renderWinRate();
+            updateMillionaireProgress();
+            updateModeBadge();
+            document.getElementById('mil-capital-input').value = startingCapital;
+            if (milToggleEl()) milToggleEl().classList.toggle('active', millionaireMode), milToggleEl().innerText = millionaireMode ? 'ON' : 'OFF';
             if ('speechSynthesis' in window) { window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); }; }
             if (gistToken && gistId) loadMemoryFromGist();
             updateISTClock();
             if ('Notification' in window && Notification.permission === 'default') { setTimeout(() => Notification.requestPermission(), 2000); }
+            
+            // News + Market
+            fetchNews();
             refreshMarketData();
             setInterval(() => { if (chatInProgress) return; refreshMarketData(); }, 60000);
+            setInterval(fetchNews, 30 * 60 * 1000);
         };
+        function milToggleEl() { return document.getElementById('mil-toggle'); }
     </script>
 </body>
 </html>
-
