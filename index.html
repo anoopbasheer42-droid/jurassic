@@ -1,5 +1,4 @@
-
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -852,6 +851,7 @@
                 pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
                 pos[i*3+2] = r * Math.cos(phi);
 
+                // Random star colors (blue, yellow, red, white)
                 const col = new THREE.Color().setHSL(Math.random() > 0.5 ? 0.6 : 0.1, 0.8, 0.8);
                 colors[i*3] = col.r; colors[i*3+1] = col.g; colors[i*3+2] = col.b;
             }
@@ -870,7 +870,7 @@
             milkyWayGroup.add(new THREE.Points(g, mat));
         })();
 
-        // 3. Very Faint Far Nebulas
+        // 3. Very Faint Far Nebulas (Adds color depth, no fog)
         (function buildNebula() {
             const colors = [0x8b5cf6, 0x3b82f6, 0xa78bfa, 0x6366f1, 0x10b981];
             for (let i = 0; i < 15; i++) {
@@ -879,7 +879,7 @@
                 const ctx = canvas.getContext('2d');
                 const grd = ctx.createRadialGradient(128,128,0,128,128,128);
                 const hex = '#' + color.toString(16).padStart(6,'0');
-                grd.addColorStop(0, hex + '30');
+                grd.addColorStop(0, hex + '30'); // Faint core
                 grd.addColorStop(0.5, hex + '08');
                 grd.addColorStop(1, hex + '00');
                 ctx.fillStyle = grd; ctx.fillRect(0, 0, 256, 256);
@@ -887,11 +887,11 @@
                 const spr = new THREE.Sprite(new THREE.SpriteMaterial({
                     map: tex,
                     transparent: true,
-                    opacity: 0.15,
+                    opacity: 0.15, // Very transparent
                     depthWrite: false,
                     blending: THREE.AdditiveBlending
                 }));
-                const r = 1500 + Math.random()*1500;
+                const r = 1500 + Math.random()*1500; // Far away
                 const theta = Math.random()*Math.PI*2;
                 const phi = Math.acos(2*Math.random()-1);
                 spr.position.set(r*Math.sin(phi)*Math.cos(theta), r*Math.sin(phi)*Math.sin(theta)*0.7, r*Math.cos(phi));
@@ -971,29 +971,10 @@
         for (const p of PLANET_DATA) {
             const grp = new THREE.Group();
             const baseTex = p.name === 'Earth' ? makeEarthTexFallback() : makeSimpleTex(p.fb[0], p.fb[1]);
-            
-            // Use MeshPhongMaterial for Earth to get realistic ocean specular highlights
-            let mat;
-            if (p.name === 'Earth') {
-                mat = new THREE.MeshPhongMaterial({ 
-                    map: baseTex, 
-                    shininess: 25, 
-                    specular: new THREE.Color(0x333333) 
-                });
-            } else {
-                mat = new THREE.MeshStandardMaterial({ 
-                    map: baseTex, 
-                    roughness: p.roughness || 0.8, 
-                    metalness: p.metalness || 0.05, 
-                    emissive: new THREE.Color(0x0a1a2a), 
-                    envMapIntensity: 0.4 
-                });
-            }
-            
+            const mat = new THREE.MeshStandardMaterial({ map: baseTex, roughness: p.roughness || 0.8, metalness: p.metalness || 0.05, emissive: new THREE.Color(0x0a1a2a), envMapIntensity: 0.4 });
             const sphere = new THREE.Mesh(new THREE.SphereGeometry(p.r, 96, 96), mat);
             sphere.userData.rotSpd = p.rotSpd;
             grp.add(sphere);
-            
             if (p.clouds) {
                 const cloudCanvas = _canvas(1024, 512);
                 const cctx = cloudCanvas.getContext('2d');
@@ -1009,47 +990,22 @@
                 cloudMesh.userData.isCloud = true;
                 grp.add(cloudMesh);
             }
-            
-            // Realistic 3D Volumetric Atmosphere Shader
             if (p.atmo) {
                 const atmoColor = p.atmo.color || 0xffffff;
-                const atmoPower = p.name === 'Earth' ? 4.0 : (p.name === 'Venus' ? 2.5 : 3.5); 
-                const atmoMat = new THREE.ShaderMaterial({
-                    uniforms: {
-                        glowColor: { value: new THREE.Color(atmoColor) },
-                        power: { value: atmoPower }
-                    },
-                    vertexShader: `
-                        varying vec3 vNormal;
-                        varying vec3 vViewPosition;
-                        void main() {
-                            vNormal = normalize( normalMatrix * normal );
-                            vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
-                            vViewPosition = -mvPosition.xyz;
-                            gl_Position = projectionMatrix * mvPosition;
-                        }
-                    `,
-                    fragmentShader: `
-                        uniform vec3 glowColor;
-                        uniform float power;
-                        varying vec3 vNormal;
-                        varying vec3 vViewPosition;
-                        void main() {
-                            vec3 viewDir = normalize( vViewPosition );
-                            float intensity = pow( 1.0 - abs(dot( vNormal, viewDir )), power );
-                            gl_FragColor = vec4( glowColor, 1.0 ) * intensity;
-                        }
-                    `,
-                    side: THREE.BackSide,
-                    blending: THREE.AdditiveBlending,
-                    transparent: true,
-                    depthWrite: false
-                });
-                const atmoSize = p.name === 'Earth' ? 1.08 : (p.name === 'Venus' ? 1.12 : 1.1);
-                const atmoMesh = new THREE.Mesh(new THREE.SphereGeometry(p.r * atmoSize, 64, 64), atmoMat);
-                grp.add(atmoMesh);
+                const atmoInner = p.atmo.inner !== undefined ? p.atmo.inner : 0.5;
+                const atmoOuter = p.atmo.outer !== undefined ? p.atmo.outer : 0.25;
+                const aCanvas = _canvas(512, 512);
+                const actx = aCanvas.getContext('2d');
+                const ag = actx.createRadialGradient(256, 256, 40, 256, 256, 256);
+                const ahex = '#' + atmoColor.toString(16).padStart(6,'0');
+                ag.addColorStop(0, ahex + 'ff'); ag.addColorStop(0.4, ahex + '80'); ag.addColorStop(0.75, ahex + '20'); ag.addColorStop(1, ahex + '00');
+                actx.fillStyle = ag; actx.fillRect(0, 0, 512, 512);
+                const atmoTex = new THREE.CanvasTexture(aCanvas);
+                const atmo = new THREE.Sprite(new THREE.SpriteMaterial({ map: atmoTex, transparent: true, opacity: atmoInner, depthWrite: false, blending: THREE.AdditiveBlending }));
+                atmo.scale.set(p.r * 2.7, p.r * 2.7, 1); grp.add(atmo);
+                const atmo2 = new THREE.Sprite(new THREE.SpriteMaterial({ map: atmoTex, transparent: true, opacity: atmoOuter, depthWrite: false, blending: THREE.AdditiveBlending }));
+                atmo2.scale.set(p.r * 4.2, p.r * 4.2, 1); grp.add(atmo2);
             }
-            
             if (p.ring) {
                 const ringColor = p.ringColor || 0xd9c89a;
                 const rg1 = new THREE.RingGeometry(p.r * 1.35, p.r * 2.0, 128);
@@ -1193,12 +1149,7 @@
         if (earthObj) {
             const earthSphere = earthObj.userData.sphere;
             loadRealTex('EarthBump', (tex) => { earthSphere.material.bumpMap = tex; earthSphere.material.bumpScale = 0.04; earthSphere.material.needsUpdate = true; });
-            // Use specular map for realistic ocean reflections
-            loadRealTex('EarthSpec', (tex) => { 
-                earthSphere.material.specularMap = tex; 
-                earthSphere.material.specular.setHex(0x555555); // Boost reflection
-                earthSphere.material.needsUpdate = true; 
-            });
+            loadRealTex('EarthSpec', (tex) => { earthSphere.material.roughnessMap = tex; earthSphere.material.roughness = 0.6; earthSphere.material.metalness = 0.1; earthSphere.material.needsUpdate = true; });
             for (const child of earthObj.children) {
                 if (child.userData && child.userData.isCloud) {
                     loadRealTex('EarthClouds', (tex) => { tex.encoding = THREE.sRGBEncoding; child.material.map = tex; child.material.opacity = 0.85; child.material.needsUpdate = true; });
@@ -2110,4 +2061,3 @@ ${memoryBlock}${personalBlock}${marketBlock}${newsBlock}${lockBlock}${millionair
     </script>
 </body>
 </html>
-```
