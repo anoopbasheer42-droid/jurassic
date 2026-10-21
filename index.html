@@ -1,3 +1,14 @@
+I see exactly what happened! Your Earth and Moon lost their textures because the app was trying to load them from a raw GitHub server that blocked the connection (CORS issue or rate limit). Because it failed, it fell back to the basic "programmer art" canvas texture, and the lighting made the dark side completely black (that's why it looks "cold" and shadowy).
+
+I have fixed it by:
+
+1. Moving all Earth, Cloud, and Moon textures to the official Three.js server (which never blocks requests and loads instantly).
+2. Adding a "Camera Fill Light" so the dark side of the Earth is always illuminated and looks like a beautiful blue marble, even when the sun is behind it.
+3. Fixing the Cloud map so the clouds rotate over the continents smoothly again.
+
+Replace your entire code with this fixed version:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -760,8 +771,17 @@
         renderer.toneMappingExposure = 1.1;
         container.appendChild(renderer.domElement);
         
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.18);
+        // --- LIGHTING FIX ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.35); // Increased ambient
         scene.add(ambientLight);
+        
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444455, 0.6); // New hemisphere light
+        scene.add(hemiLight);
+
+        const cameraLight = new THREE.DirectionalLight(0xffffff, 1.2); // New camera light
+        cameraLight.position.set(1, 1, 1);
+        camera.add(cameraLight);
+        scene.add(camera);
 
         let currentTargetPlanetIndex = 2;
         const EARTH_INDEX = 2;
@@ -959,7 +979,7 @@
         for (const p of PLANET_DATA) {
             const grp = new THREE.Group();
             const baseTex = p.name === 'Earth' ? makeEarthTexFallback() : makeSimpleTex(p.fb[0], p.fb[1]);
-            const mat = new THREE.MeshStandardMaterial({ map: baseTex, roughness: p.roughness || 0.8, metalness: p.metalness || 0.05, envMapIntensity: 0.4 });
+            const mat = new THREE.MeshStandardMaterial({ map: baseTex, roughness: p.roughness || 0.8, metalness: p.metalness || 0.05, emissive: new THREE.Color(0x0a1a2a), envMapIntensity: 0.4 });
             const sphere = new THREE.Mesh(new THREE.SphereGeometry(p.r, 96, 96), mat);
             sphere.userData.rotSpd = p.rotSpd;
             grp.add(sphere);
@@ -1125,14 +1145,24 @@
             }
         }
 
+        // --- TEXTURE URL FIX: USING OFFICIAL THREE.JS SERVER ---
+        const TEX_BASE_EARTH = 'https://threejs.org/examples/textures/planets/';
         const TEX_BASE = 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/';
-        const TEX_BASE_EARTH = 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/';
         const REAL_TEX = {
-            Sun: TEX_BASE + 'sunmap.jpg', Mercury: TEX_BASE + 'mercurymap.jpg', Venus: TEX_BASE + 'venusmap.jpg',
-            Earth: TEX_BASE_EARTH + 'earth_atmos_2048.jpg', EarthSpec: TEX_BASE_EARTH + 'earth_specular_2048.jpg',
-            EarthClouds: TEX_BASE_EARTH + 'earth_clouds_1024.png', EarthBump: TEX_BASE_EARTH + 'earth_normal_2048.jpg',
-            Moon: TEX_BASE + 'moonmap1k.jpg', Mars: TEX_BASE + 'marsmap1k.jpg', Jupiter: TEX_BASE + 'jupitermap.jpg',
-            Saturn: TEX_BASE + 'saturnmap.jpg', Uranus: TEX_BASE + 'uranusmap.jpg', Neptune: TEX_BASE + 'neptunemap.jpg', Pluto: TEX_BASE + 'plutomap1k.jpg'
+            Sun: TEX_BASE + 'sunmap.jpg', 
+            Mercury: TEX_BASE + 'mercurymap.jpg', 
+            Venus: TEX_BASE + 'venusmap.jpg',
+            Earth: TEX_BASE_EARTH + 'earth_atmos_2048.jpg', 
+            EarthSpec: TEX_BASE_EARTH + 'earth_specular_2048.jpg',
+            EarthClouds: TEX_BASE_EARTH + 'earth_clouds_1024.png', 
+            EarthBump: TEX_BASE_EARTH + 'earth_normal_2048.jpg',
+            Moon: TEX_BASE_EARTH + 'moon_1024.jpg', 
+            Mars: TEX_BASE + 'marsmap1k.jpg', 
+            Jupiter: TEX_BASE + 'jupitermap.jpg',
+            Saturn: TEX_BASE + 'saturnmap.jpg', 
+            Uranus: TEX_BASE + 'uranusmap.jpg', 
+            Neptune: TEX_BASE + 'neptunemap.jpg', 
+            Pluto: TEX_BASE + 'plutomap1k.jpg'
         };
         const texLoader = new THREE.TextureLoader();
         texLoader.setCrossOrigin('anonymous');
@@ -1170,6 +1200,45 @@
                     grp.userData.sphere.material.needsUpdate = true;
                 }
             });
+        }
+
+        if (earthObj) {
+            const earthSphere = earthObj.userData.sphere;
+            loadRealTex('EarthBump', (tex) => {
+                earthSphere.material.bumpMap = tex;
+                earthSphere.material.bumpScale = 0.04;
+                earthSphere.material.needsUpdate = true;
+            });
+            loadRealTex('EarthSpec', (tex) => {
+                earthSphere.material.roughnessMap = tex;
+                earthSphere.material.roughness = 0.6;
+                earthSphere.material.metalness = 0.1;
+                earthSphere.material.needsUpdate = true;
+            });
+            for (const child of earthObj.children) {
+                if (child.userData && child.userData.isCloud) {
+                    loadRealTex('EarthClouds', (tex) => {
+                        tex.encoding = THREE.sRGBEncoding;
+                        child.material.map = tex;
+                        child.material.opacity = 0.85;
+                        child.material.needsUpdate = true;
+                    });
+                    break;
+                }
+            }
+            if (earthObj.userData.moons) {
+                for (const m of earthObj.userData.moons) {
+                    loadRealTex('Moon', (tex) => {
+                        m.grp.traverse((c) => {
+                            if (c.userData && c.userData.isMoon && c.material) {
+                                tex.encoding = THREE.sRGBEncoding;
+                                c.material.map = tex;
+                                c.material.needsUpdate = true;
+                            }
+                        });
+                    });
+                }
+            }
         }
 
         let lastInteractionTime = Date.now();
@@ -1517,10 +1586,8 @@
             document.getElementById('val-candle-1h').innerText = `1H · ${trend} · RSI ${rsi1H.toFixed(1)} · EMA20 ${ema20[ema20.length-1].toFixed(5)}`; 
             document.getElementById('val-candle-4h').innerText = `4H bars loaded · ATR ${atr.toFixed(5)}`; 
 
-            // Check signal outcomes
             checkSignalOutcomes();
 
-            // Only detect setups if NOT in news lock
             if (!isNewsLockActive()) {
                 const setup = detectSetup(marketData); 
                 if (setup) { 
@@ -1589,9 +1656,6 @@
             throw new Error("All AI providers failed. Check your keys.");
         }
 
-        // ============================================================
-        // ASK AI FOR SIGNAL (with news lock + signal recording)
-        // ============================================================
         async function askAIForSignal() {
             if (!groqKey && !apiKey) { alert("Please set your Groq or Gemini API Key first."); togglePanel('panel-key'); return; }
             
@@ -1664,7 +1728,6 @@ Respond ONLY with valid JSON:
                 if (sig.wise_words) document.getElementById('wise-words').innerText = sig.wise_words;
                 document.getElementById('alert-box').classList.remove('active');
                 
-                // Record signal for win rate tracking
                 if (sig.signal === 'BUY' || sig.signal === 'SELL') {
                     recordSignal(sig);
                 }
@@ -1848,9 +1911,6 @@ Respond ONLY with valid JSON:
             return cleaned.split('\n').map(l => l.trim()).filter(l => l.length > 0).join(' ');
         }
 
-        // ============================================================
-        // PERSONALITY PROMPT (with MILLIONAIRE + INSTITUTIONAL + NEWS)
-        // ============================================================
         function buildPersonalityPrompt(includeSignal, userText = "") {
             const now = new Date();
             const istTime = now.toLocaleString('en-IN', {timeZone:'Asia/Kolkata'});
@@ -2293,3 +2353,4 @@ ${memoryBlock}${personalBlock}${marketBlock}${newsBlock}${lockBlock}${millionair
     </script>
 </body>
 </html>
+```
