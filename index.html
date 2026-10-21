@@ -1,4 +1,5 @@
- <!DOCTYPE html>
+aa
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -803,7 +804,6 @@
         const milkyWayGroup = new THREE.Group();
         scene.add(milkyWayGroup);
 
-        // 1. Massive Galactic Disk (The core Milky Way band)
         (function buildGalacticDisk() {
             const N = 30000;
             const pos = new Float32Array(N * 3);
@@ -812,65 +812,36 @@
                 const radius = 1000 + Math.random() * 3000;
                 const angle = Math.random() * Math.PI * 2;
                 const height = (Math.random() - 0.5) * 200; 
-
-                pos[i*3] = Math.cos(angle) * radius;
-                pos[i*3+1] = height;
-                pos[i*3+2] = Math.sin(angle) * radius;
-
+                pos[i*3] = Math.cos(angle) * radius; pos[i*3+1] = height; pos[i*3+2] = Math.sin(angle) * radius;
                 const col = new THREE.Color().setHSL(0.6 + Math.random()*0.2, 0.5, 0.5 + Math.random()*0.5);
                 colors[i*3] = col.r; colors[i*3+1] = col.g; colors[i*3+2] = col.b;
             }
             const g = new THREE.BufferGeometry();
             g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
             g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            const mat = new THREE.PointsMaterial({
-                size: 3,
-                map: makeCircularStarTexture('rgba(255,255,255,0.8)'),
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.7,
-                depthWrite: false,
-                blending: THREE.AdditiveBlending
-            });
+            const mat = new THREE.PointsMaterial({ size: 3, map: makeCircularStarTexture('rgba(255,255,255,0.8)'), vertexColors: true, transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending });
             const disk = new THREE.Points(g, mat);
-            disk.rotation.x = Math.PI * 0.2;
-            disk.rotation.z = Math.PI * 0.1;
+            disk.rotation.x = Math.PI * 0.2; disk.rotation.z = Math.PI * 0.1;
             milkyWayGroup.add(disk);
         })();
 
-        // 2. Bright Foreground Stars (Dense and lively)
         (function buildBrightStars() {
             const N = 20000;
             const pos = new Float32Array(N * 3);
             const colors = new Float32Array(N * 3);
             for (let i = 0; i < N; i++) {
-                const r = 300 + Math.random() * 800;
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.acos(2 * Math.random() - 1);
-                pos[i*3] = r * Math.sin(phi) * Math.cos(theta);
-                pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
-                pos[i*3+2] = r * Math.cos(phi);
-
-                // Random star colors (blue, yellow, red, white)
+                const r = 300 + Math.random() * 800; const theta = Math.random() * Math.PI * 2; const phi = Math.acos(2 * Math.random() - 1);
+                pos[i*3] = r * Math.sin(phi) * Math.cos(theta); pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta); pos[i*3+2] = r * Math.cos(phi);
                 const col = new THREE.Color().setHSL(Math.random() > 0.5 ? 0.6 : 0.1, 0.8, 0.8);
                 colors[i*3] = col.r; colors[i*3+1] = col.g; colors[i*3+2] = col.b;
             }
             const g = new THREE.BufferGeometry();
             g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
             g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            const mat = new THREE.PointsMaterial({
-                size: 4,
-                map: makeCircularStarTexture('rgba(255,255,255,1)'),
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.9,
-                depthWrite: false,
-                blending: THREE.AdditiveBlending
-            });
+            const mat = new THREE.PointsMaterial({ size: 4, map: makeCircularStarTexture('rgba(255,255,255,1)'), vertexColors: true, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending });
             milkyWayGroup.add(new THREE.Points(g, mat));
         })();
 
-        // 3. Very Faint Far Nebulas (Adds color depth, no fog)
         (function buildNebula() {
             const colors = [0x8b5cf6, 0x3b82f6, 0xa78bfa, 0x6366f1, 0x10b981];
             for (let i = 0; i < 15; i++) {
@@ -879,29 +850,16 @@
                 const ctx = canvas.getContext('2d');
                 const grd = ctx.createRadialGradient(128,128,0,128,128,128);
                 const hex = '#' + color.toString(16).padStart(6,'0');
-                grd.addColorStop(0, hex + '30'); // Faint core
-                grd.addColorStop(0.5, hex + '08');
-                grd.addColorStop(1, hex + '00');
+                grd.addColorStop(0, hex + '30'); grd.addColorStop(0.5, hex + '08'); grd.addColorStop(1, hex + '00');
                 ctx.fillStyle = grd; ctx.fillRect(0, 0, 256, 256);
                 const tex = new THREE.CanvasTexture(canvas);
-                const spr = new THREE.Sprite(new THREE.SpriteMaterial({
-                    map: tex,
-                    transparent: true,
-                    opacity: 0.15, // Very transparent
-                    depthWrite: false,
-                    blending: THREE.AdditiveBlending
-                }));
-                const r = 1500 + Math.random()*1500; // Far away
-                const theta = Math.random()*Math.PI*2;
-                const phi = Math.acos(2*Math.random()-1);
+                const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.15, depthWrite: false, blending: THREE.AdditiveBlending }));
+                const r = 1500 + Math.random()*1500; const theta = Math.random()*Math.PI*2; const phi = Math.acos(2*Math.random()-1);
                 spr.position.set(r*Math.sin(phi)*Math.cos(theta), r*Math.sin(phi)*Math.sin(theta)*0.7, r*Math.cos(phi));
-                const s = 1000 + Math.random()*1000;
-                spr.scale.set(s, s, 1);
-                milkyWayGroup.add(spr);
+                const s = 1000 + Math.random()*1000; spr.scale.set(s, s, 1); milkyWayGroup.add(spr);
             }
         })();
 
-        // 4. Shooting Stars System
         const shootingStars = [];
         function createShootingStar() {
             const geo = new THREE.BufferGeometry();
@@ -909,15 +867,10 @@
             geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             const mat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1, blending: THREE.AdditiveBlending });
             const line = new THREE.Line(geo, mat);
-            
-            const theta = Math.random() * Math.PI * 2;
-            const phi = Math.acos(2 * Math.random() - 1);
-            const r = 600 + Math.random() * 400;
+            const theta = Math.random() * Math.PI * 2; const phi = Math.acos(2 * Math.random() - 1); const r = 600 + Math.random() * 400;
             line.position.set(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
-            
             const dir = new THREE.Vector3((Math.random()-0.5)*2, (Math.random()-0.5)*2, (Math.random()-0.5)*2).normalize();
             line.lookAt(line.position.clone().add(dir));
-            
             milkyWayGroup.add(line);
             shootingStars.push({ mesh: line, dir: dir, speed: 15 + Math.random()*15, life: 1 });
         }
@@ -926,19 +879,12 @@
         scene.add(solarSystemGroup);
 
         const sunGroup = new THREE.Group();
-        const sunMesh = new THREE.Mesh(
-            new THREE.SphereGeometry(1.6, 128, 128),
-            new THREE.MeshBasicMaterial({ color: 0xffcc66 })
-        );
+        const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(1.6, 128, 128), new THREE.MeshBasicMaterial({ color: 0xffcc66 }));
         sunGroup.add(sunMesh);
 
         const sunCoronaCanvas = _canvas(1024, 1024);
         { const ctx = sunCoronaCanvas.getContext('2d'); const g = ctx.createRadialGradient(512, 512, 120, 512, 512, 512); 
-          g.addColorStop(0, 'rgba(255,245,200,1)'); 
-          g.addColorStop(0.15, 'rgba(255,220,120,0.85)'); 
-          g.addColorStop(0.35, 'rgba(255,160,60,0.45)'); 
-          g.addColorStop(0.6, 'rgba(255,110,30,0.15)'); 
-          g.addColorStop(1, 'rgba(255,70,10,0)'); 
+          g.addColorStop(0, 'rgba(255,245,200,1)'); g.addColorStop(0.15, 'rgba(255,220,120,0.85)'); g.addColorStop(0.35, 'rgba(255,160,60,0.45)'); g.addColorStop(0.6, 'rgba(255,110,30,0.15)'); g.addColorStop(1, 'rgba(255,70,10,0)'); 
           ctx.fillStyle = g; ctx.fillRect(0, 0, 1024, 1024); }
         const sunCorona = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(sunCoronaCanvas), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
         sunCorona.scale.set(14, 14, 1); sunGroup.add(sunCorona);
@@ -956,56 +902,138 @@
         solarSystemGroup.add(sunGroup);
 
         const PLANET_DATA = [
-            { name:'Mercury', r:0.20, o:6,   fb:['#8a7f75', '100,90,80'],   spd:0.42, rotSpd:0.005, roughness:0.95, metalness:0.05, atmo:{ color: 0xbbaabb, inner: 0.08, outer: 0.04 } },
-            { name:'Venus',   r:0.30, o:9,   fb:['#d8b87a', '240,225,190'], spd:0.32, rotSpd:-0.003, roughness:0.85, metalness:0.08, atmo:{ color: 0xffe4a8, inner: 0.65, outer: 0.38 } },
-            { name:'Earth',   r:0.36, o:13,  fb:null, clouds:true, spd:0.24, rotSpd:0.01, roughness:0.7, metalness:0.1, atmo:{ color: 0x3b82f6, inner: 0.55, outer: 0.30 }, moons:[{ r:0.10, o:0.85, spd:1.8, useReal:true, incl:0.10 }] },
-            { name:'Mars',    r:0.26, o:17,  fb:['#c4653a', '230,160,120'], spd:0.19, rotSpd:0.009, roughness:0.9, metalness:0.08, atmo:{ color: 0xff8050, inner: 0.30, outer: 0.14 }, moons:[{ r:0.025, o:0.50, spd:2.6, color:'#8a7060', crater:'120,100,80', incl:0.20 },{ r:0.018, o:0.75, spd:1.6, color:'#756a5e', crater:'90,80,70', incl:-0.15 }] },
-            { name:'Jupiter', r:1.10, o:25,  fb:['#d9b88a', '200,170,130'], spd:0.11, rotSpd:0.02, roughness:0.75, metalness:0.1, atmo:{ color: 0xd4b088, inner: 0.45, outer: 0.22 }, moons:[{ r:0.10, o:1.7, spd:1.3, color:'#e8d44a', crater:'180,150,40', incl:0.05 },{ r:0.09, o:2.1, spd:1.1, color:'#e8e0d8', crater:'180,175,170', incl:-0.08 },{ r:0.12, o:2.6, spd:0.9, color:'#8a7a6a', crater:'70,60,50', incl:0.12 },{ r:0.11, o:3.2, spd:0.7, color:'#5a5250', crater:'40,35,35', incl:-0.10 }] },
-            { name:'Saturn',  r:0.95, o:34,  fb:['#e8d5a0', '225,205,165'], spd:0.08, rotSpd:0.018, roughness:0.8, metalness:0.1, ring:true, atmo:{ color: 0xffe8b8, inner: 0.42, outer: 0.20 }, moons:[{ r:0.10, o:2.0, spd:0.9, color:'#f0a04a', crater:'180,120,60', incl:0.10 },{ r:0.06, o:1.6, spd:1.3, color:'#c8c0b8', crater:'120,110,100', incl:-0.05 },{ r:0.05, o:2.5, spd:0.7, color:'#f0f0f0', crater:'180,180,180', incl:0.08 }] },
-            { name:'Uranus',  r:0.62, o:43,  fb:['#b0e0e6', '190,235,240'], spd:0.055, rotSpd:0.012, roughness:0.6, metalness:0.12, ring:true, ringColor:0x88ccee, atmo:{ color: 0xa0e8f0, inner: 0.50, outer: 0.28 }, moons:[{ r:0.06, o:1.3, spd:1.2, color:'#a0a0a0', crater:'80,80,80', incl:0.15 },{ r:0.055, o:1.6, spd:1.0, color:'#706860', crater:'60,55,50', incl:-0.12 },{ r:0.045, o:1.0, spd:1.5, color:'#c0b8b0', crater:'100,95,90', incl:0.10 }] },
-            { name:'Neptune', r:0.60, o:52,  fb:['#3b6cc0', '90,140,220'], spd:0.042, rotSpd:0.011, roughness:0.6, metalness:0.12, atmo:{ color: 0x5588ff, inner: 0.55, outer: 0.30 }, moons:[{ r:0.07, o:1.4, spd:-1.0, color:'#e0c8c0', crater:'150,120,110', incl:0.12 },{ r:0.03, o:0.9, spd:1.5, color:'#555048', crater:'40,35,30', incl:-0.08 }] },
-            { name:'Pluto',   r:0.15, o:62,  fb:['#9a8878', '210,190,160'], spd:0.028, rotSpd:0.005, roughness:0.95, metalness:0.05, atmo:{ color: 0x99bbdd, inner: 0.18, outer: 0.08 }, moons:[{ r:0.05, o:0.35, spd:1.8, color:'#908878', crater:'70,65,55', incl:0.10 }] }
+            { name:'Mercury', r:0.20, o:6,   fb:['#8a7f75', '100,90,80'],   spd:0.42, rotSpd:0.005, roughness:0.95, metalness:0.05, atmo:{ color: 0xbbaabb, power: 3.0 } },
+            { name:'Venus',   r:0.30, o:9,   fb:['#d8b87a', '240,225,190'], spd:0.32, rotSpd:-0.003, roughness:0.85, metalness:0.08, clouds:true, atmo:{ color: 0xffe4a8, power: 2.5 } },
+            { name:'Earth',   r:0.36, o:13,  fb:null, clouds:true, spd:0.24, rotSpd:0.01, roughness:0.7, metalness:0.1, atmo:{ color: 0x3b82f6, power: 4.0 }, moons:[{ r:0.10, o:0.85, spd:1.8, useReal:true, incl:0.10 }] },
+            { name:'Mars',    r:0.26, o:17,  fb:['#c4653a', '230,160,120'], spd:0.19, rotSpd:0.009, roughness:0.9, metalness:0.08, atmo:{ color: 0xff8050, power: 3.5 }, moons:[{ r:0.025, o:0.50, spd:2.6, color:'#8a7060', crater:'120,100,80', incl:0.20 },{ r:0.018, o:0.75, spd:1.6, color:'#756a5e', crater:'90,80,70', incl:-0.15 }] },
+            { name:'Jupiter', r:1.10, o:25,  fb:['#d9b88a', '200,170,130'], spd:0.11, rotSpd:0.02, roughness:0.75, metalness:0.1, atmo:{ color: 0xd4b088, power: 2.0 }, moons:[{ r:0.10, o:1.7, spd:1.3, color:'#e8d44a', crater:'180,150,40', incl:0.05 },{ r:0.09, o:2.1, spd:1.1, color:'#e8e0d8', crater:'180,175,170', incl:-0.08 },{ r:0.12, o:2.6, spd:0.9, color:'#8a7a6a', crater:'70,60,50', incl:0.12 },{ r:0.11, o:3.2, spd:0.7, color:'#5a5250', crater:'40,35,35', incl:-0.10 }] },
+            { name:'Saturn',  r:0.95, o:34,  fb:['#e8d5a0', '225,205,165'], spd:0.08, rotSpd:0.018, roughness:0.8, metalness:0.1, ring:true, atmo:{ color: 0xffe8b8, power: 2.2 }, moons:[{ r:0.10, o:2.0, spd:0.9, color:'#f0a04a', crater:'180,120,60', incl:0.10 },{ r:0.06, o:1.6, spd:1.3, color:'#c8c0b8', crater:'120,110,100', incl:-0.05 },{ r:0.05, o:2.5, spd:0.7, color:'#f0f0f0', crater:'180,180,180', incl:0.08 }] },
+            { name:'Uranus',  r:0.62, o:43,  fb:['#b0e0e6', '190,235,240'], spd:0.055, rotSpd:0.012, roughness:0.6, metalness:0.12, ring:true, ringColor:0x88ccee, atmo:{ color: 0xa0e8f0, power: 3.2 }, moons:[{ r:0.06, o:1.3, spd:1.2, color:'#a0a0a0', crater:'80,80,80', incl:0.15 },{ r:0.055, o:1.6, spd:1.0, color:'#706860', crater:'60,55,50', incl:-0.12 },{ r:0.045, o:1.0, spd:1.5, color:'#c0b8b0', crater:'100,95,90', incl:0.10 }] },
+            { name:'Neptune', r:0.60, o:52,  fb:['#3b6cc0', '90,140,220'], spd:0.042, rotSpd:0.011, roughness:0.6, metalness:0.12, atmo:{ color: 0x5588ff, power: 3.2 }, moons:[{ r:0.07, o:1.4, spd:-1.0, color:'#e0c8c0', crater:'150,120,110', incl:0.12 },{ r:0.03, o:0.9, spd:1.5, color:'#555048', crater:'40,35,30', incl:-0.08 }] },
+            { name:'Pluto',   r:0.15, o:62,  fb:['#9a8878', '210,190,160'], spd:0.028, rotSpd:0.005, roughness:0.95, metalness:0.05, atmo:{ color: 0x99bbdd, power: 3.5 }, moons:[{ r:0.05, o:0.35, spd:1.8, color:'#908878', crater:'70,65,55', incl:0.10 }] }
         ];
 
+        let earthRain, earthLightning;
         const planetObjs = [];
+        
         for (const p of PLANET_DATA) {
             const grp = new THREE.Group();
             const baseTex = p.name === 'Earth' ? makeEarthTexFallback() : makeSimpleTex(p.fb[0], p.fb[1]);
-            const mat = new THREE.MeshStandardMaterial({ map: baseTex, roughness: p.roughness || 0.8, metalness: p.metalness || 0.05, emissive: new THREE.Color(0x0a1a2a), envMapIntensity: 0.4 });
+            
+            let mat;
+            if (p.name === 'Earth') {
+                // Use MeshPhongMaterial for realistic ocean specularity
+                mat = new THREE.MeshPhongMaterial({ 
+                    map: baseTex, 
+                    shininess: 30, 
+                    specular: new THREE.Color(0x222222) 
+                });
+            } else {
+                mat = new THREE.MeshStandardMaterial({ 
+                    map: baseTex, 
+                    roughness: p.roughness || 0.8, 
+                    metalness: p.metalness || 0.05, 
+                    emissive: new THREE.Color(0x0a1a2a), 
+                    envMapIntensity: 0.4 
+                });
+            }
+            
             const sphere = new THREE.Mesh(new THREE.SphereGeometry(p.r, 96, 96), mat);
             sphere.userData.rotSpd = p.rotSpd;
             grp.add(sphere);
+            
+            // Clouds and Weather Systems
             if (p.clouds) {
                 const cloudCanvas = _canvas(1024, 512);
                 const cctx = cloudCanvas.getContext('2d');
-                for (let i = 0; i < 280; i++) {
-                    const x = Math.random()*1024, y = Math.random()*512, r = 10 + Math.random()*48;
+                // Make clouds thicker and more realistic
+                for (let i = 0; i < 350; i++) {
+                    const x = Math.random()*1024, y = Math.random()*512, r = 10 + Math.random()*54;
                     const g = cctx.createRadialGradient(x, y, 0, x, y, r);
-                    g.addColorStop(0, `rgba(255,255,255,${0.5 + Math.random()*0.4})`);
+                    const color = p.name === 'Venus' ? `rgba(255, 240, 150, ${0.4 + Math.random()*0.4})` : `rgba(255,255,255,${0.5 + Math.random()*0.4})`;
+                    g.addColorStop(0, color);
                     g.addColorStop(1, 'rgba(255,255,255,0)');
                     cctx.fillStyle = g; cctx.beginPath(); cctx.arc(x, y, r, 0, Math.PI*2); cctx.fill();
                 }
-                const cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(p.r * 1.018, 96, 96), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cloudCanvas), transparent: true, opacity: 0.85, depthWrite: false, roughness: 0.9, metalness: 0 }));
+                const cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(p.r * 1.02, 96, 96), new THREE.MeshPhongMaterial({ 
+                    map: new THREE.CanvasTexture(cloudCanvas), 
+                    transparent: true, opacity: p.name === 'Venus' ? 0.95 : 0.85, depthWrite: false, 
+                    shininess: 10 
+                }));
                 cloudMesh.userData.rotSpd = p.rotSpd * 1.35;
                 cloudMesh.userData.isCloud = true;
                 grp.add(cloudMesh);
             }
+
+            // Rain System for Earth
+            if (p.name === 'Earth') {
+                const rainCount = 1200;
+                const rainGeo = new THREE.BufferGeometry();
+                const rainPos = new Float32Array(rainCount * 3);
+                const rainVel = [];
+                for (let i = 0; i < rainCount; i++) {
+                    // Spawn in a shell around Earth
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    const r = p.r * 1.05 + Math.random() * 0.05;
+                    rainPos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+                    rainPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+                    rainPos[i*3+2] = r * Math.cos(phi);
+                    rainVel.push({ speed: 0.002 + Math.random()*0.003, angle: theta, phi: phi, r: r });
+                }
+                rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+                const rainMat = new THREE.PointsMaterial({ color: 0xaaccff, size: 0.005, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending });
+                earthRain = new THREE.Points(rainGeo, rainMat);
+                earthRain.userData = { velocities: rainVel, radius: p.r };
+                grp.add(earthRain);
+
+                // Lightning Light
+                earthLightning = new THREE.PointLight(0x88ccff, 0, 5);
+                earthLightning.position.set(p.r, p.r, p.r); // Position off-center to create shadows
+                grp.add(earthLightning);
+            }
+
+            // Realistic 3D Volumetric Atmosphere Shader
             if (p.atmo) {
                 const atmoColor = p.atmo.color || 0xffffff;
-                const atmoInner = p.atmo.inner !== undefined ? p.atmo.inner : 0.5;
-                const atmoOuter = p.atmo.outer !== undefined ? p.atmo.outer : 0.25;
-                const aCanvas = _canvas(512, 512);
-                const actx = aCanvas.getContext('2d');
-                const ag = actx.createRadialGradient(256, 256, 40, 256, 256, 256);
-                const ahex = '#' + atmoColor.toString(16).padStart(6,'0');
-                ag.addColorStop(0, ahex + 'ff'); ag.addColorStop(0.4, ahex + '80'); ag.addColorStop(0.75, ahex + '20'); ag.addColorStop(1, ahex + '00');
-                actx.fillStyle = ag; actx.fillRect(0, 0, 512, 512);
-                const atmoTex = new THREE.CanvasTexture(aCanvas);
-                const atmo = new THREE.Sprite(new THREE.SpriteMaterial({ map: atmoTex, transparent: true, opacity: atmoInner, depthWrite: false, blending: THREE.AdditiveBlending }));
-                atmo.scale.set(p.r * 2.7, p.r * 2.7, 1); grp.add(atmo);
-                const atmo2 = new THREE.Sprite(new THREE.SpriteMaterial({ map: atmoTex, transparent: true, opacity: atmoOuter, depthWrite: false, blending: THREE.AdditiveBlending }));
-                atmo2.scale.set(p.r * 4.2, p.r * 4.2, 1); grp.add(atmo2);
+                const atmoPower = p.atmo.power || 3.0;
+                const atmoMat = new THREE.ShaderMaterial({
+                    uniforms: {
+                        glowColor: { value: new THREE.Color(atmoColor) },
+                        power: { value: atmoPower }
+                    },
+                    vertexShader: `
+                        varying vec3 vNormal;
+                        varying vec3 vViewPosition;
+                        void main() {
+                            vNormal = normalize( normalMatrix * normal );
+                            vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+                            vViewPosition = -mvPosition.xyz;
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform vec3 glowColor;
+                        uniform float power;
+                        varying vec3 vNormal;
+                        varying vec3 vViewPosition;
+                        void main() {
+                            vec3 viewDir = normalize( vViewPosition );
+                            float intensity = pow( 1.0 - abs(dot( vNormal, viewDir )), power );
+                            gl_FragColor = vec4( glowColor, 1.0 ) * intensity;
+                        }
+                    `,
+                    side: THREE.BackSide,
+                    blending: THREE.AdditiveBlending,
+                    transparent: true,
+                    depthWrite: false
+                });
+                // Jupiter/Saturn have huge gas atmospheres
+                const atmoSize = p.name === 'Jupiter' ? 1.12 : (p.name === 'Saturn' ? 1.10 : 1.08);
+                const atmoMesh = new THREE.Mesh(new THREE.SphereGeometry(p.r * atmoSize, 64, 64), atmoMat);
+                grp.add(atmoMesh);
             }
+            
             if (p.ring) {
                 const ringColor = p.ringColor || 0xd9c89a;
                 const rg1 = new THREE.RingGeometry(p.r * 1.35, p.r * 2.0, 128);
@@ -1116,6 +1144,9 @@
         // --- TEXTURES ---
         const TEX_BASE_EARTH = 'https://threejs.org/examples/textures/planets/';
         const TEX_BASE = 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/';
+        // Added water normal map for realistic oceans
+        const WATER_NORMAL = 'https://threejs.org/examples/textures/waternormals.jpg'; 
+
         const REAL_TEX = {
             Sun: TEX_BASE + 'sunmap.jpg', Mercury: TEX_BASE + 'mercurymap.jpg', Venus: TEX_BASE + 'venusmap.jpg',
             Earth: TEX_BASE_EARTH + 'earth_atmos_2048.jpg', EarthSpec: TEX_BASE_EARTH + 'earth_specular_2048.jpg',
@@ -1148,8 +1179,21 @@
 
         if (earthObj) {
             const earthSphere = earthObj.userData.sphere;
+            // Load water normal map for animated oceans
+            texLoader.load(WATER_NORMAL, (tex) => {
+                earthSphere.material.normalMap = tex;
+                earthSphere.material.normalScale = new THREE.Vector2(0.8, 0.8);
+                earthSphere.material.needsUpdate = true;
+                earthSphere.userData.waterNormalMap = tex;
+            });
+
             loadRealTex('EarthBump', (tex) => { earthSphere.material.bumpMap = tex; earthSphere.material.bumpScale = 0.04; earthSphere.material.needsUpdate = true; });
-            loadRealTex('EarthSpec', (tex) => { earthSphere.material.roughnessMap = tex; earthSphere.material.roughness = 0.6; earthSphere.material.metalness = 0.1; earthSphere.material.needsUpdate = true; });
+            // Use specular map for realistic ocean reflections
+            loadRealTex('EarthSpec', (tex) => { 
+                earthSphere.material.specularMap = tex; 
+                earthSphere.material.specular.setHex(0x888888); // Very shiny oceans
+                earthSphere.material.needsUpdate = true; 
+            });
             for (const child of earthObj.children) {
                 if (child.userData && child.userData.isCloud) {
                     loadRealTex('EarthClouds', (tex) => { tex.encoding = THREE.sRGBEncoding; child.material.map = tex; child.material.opacity = 0.85; child.material.needsUpdate = true; });
@@ -1305,6 +1349,33 @@
             const ts = nowMs * 0.001;
             const speedMult = orbitSpeedMultiplier;
             
+            // Animate Water (Oceans)
+            if (earthObj && earthObj.userData.sphere.userData.waterNormalMap) {
+                earthObj.userData.sphere.userData.waterNormalMap.offset.x += 0.001 * speedMult;
+                earthObj.userData.sphere.userData.waterNormalMap.offset.y += 0.0005 * speedMult;
+            }
+
+            // Animate Rain & Lightning
+            if (earthRain) {
+                const pos = earthRain.geometry.attributes.position.array;
+                const vels = earthRain.userData.velocities;
+                const rad = earthRain.userData.radius;
+                for (let i = 0; i < vels.length; i++) {
+                    pos[i*3+1] -= vels[i].speed * speedMult; // Fall down
+                    if (pos[i*3+1] < -rad) {
+                        pos[i*3+1] = rad; // Reset to top
+                    }
+                }
+                earthRain.geometry.attributes.position.needsUpdate = true;
+
+                // Random Lightning
+                if (Math.random() < 0.015) {
+                    earthLightning.intensity = 10 + Math.random() * 10;
+                } else {
+                    earthLightning.intensity *= 0.85; // Fade out
+                }
+            }
+
             for (const grp of planetObjs) {
                 const ud = grp.userData;
                 const a = ud.angle + ts * ud.speed * 0.04 * speedMult;
