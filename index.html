@@ -799,12 +799,12 @@
         }
 
         // ============================================================
-        // FIXED DEEP SPACE BACKGROUND
+        // FIXED DEEP SPACE BACKGROUND (Now with Visible Nebula)
         // ============================================================
         const milkyWayGroup = new THREE.Group();
         scene.add(milkyWayGroup);
 
-        // 1. Massive Galactic Disk (The core Milky Way band)
+        // 1. Massive Galactic Disk
         (function buildGalacticDisk() {
             const N = 30000;
             const pos = new Float32Array(N * 3);
@@ -839,7 +839,7 @@
             milkyWayGroup.add(disk);
         })();
 
-        // 2. Bright Foreground Stars (Dense and lively)
+        // 2. Bright Foreground Stars
         (function buildBrightStars() {
             const N = 20000;
             const pos = new Float32Array(N * 3);
@@ -852,7 +852,6 @@
                 pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
                 pos[i*3+2] = r * Math.cos(phi);
 
-                // Random star colors (blue, yellow, red, white)
                 const col = new THREE.Color().setHSL(Math.random() > 0.5 ? 0.6 : 0.1, 0.8, 0.8);
                 colors[i*3] = col.r; colors[i*3+1] = col.g; colors[i*3+2] = col.b;
             }
@@ -871,32 +870,33 @@
             milkyWayGroup.add(new THREE.Points(g, mat));
         })();
 
-        // 3. Very Faint Far Nebulas (Adds color depth, no fog)
+        // 3. THE NEBULA FIX (Increased Opacity, Density & Vibrant Colors)
         (function buildNebula() {
-            const colors = [0x8b5cf6, 0x3b82f6, 0xa78bfa, 0x6366f1, 0x10b981];
-            for (let i = 0; i < 15; i++) {
+            const colors = [0x8b5cf6, 0x3b82f6, 0xa78bfa, 0x6366f1, 0xff00ff]; // Added Magenta for pop
+            for (let i = 0; i < 40; i++) { // Increased count
                 const color = colors[Math.floor(Math.random()*colors.length)];
                 const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
                 const ctx = canvas.getContext('2d');
                 const grd = ctx.createRadialGradient(128,128,0,128,128,128);
                 const hex = '#' + color.toString(16).padStart(6,'0');
-                grd.addColorStop(0, hex + '30'); // Faint core
-                grd.addColorStop(0.5, hex + '08');
+                // Boosted the alpha values (80 is 50% opacity, 30 is 18%)
+                grd.addColorStop(0, hex + '80'); 
+                grd.addColorStop(0.4, hex + '30');
                 grd.addColorStop(1, hex + '00');
                 ctx.fillStyle = grd; ctx.fillRect(0, 0, 256, 256);
                 const tex = new THREE.CanvasTexture(canvas);
                 const spr = new THREE.Sprite(new THREE.SpriteMaterial({
                     map: tex,
                     transparent: true,
-                    opacity: 0.15, // Very transparent
+                    opacity: 0.45, // Boosted from 0.15
                     depthWrite: false,
                     blending: THREE.AdditiveBlending
                 }));
-                const r = 1500 + Math.random()*1500; // Far away
+                const r = 800 + Math.random()*1500; // Brought closer
                 const theta = Math.random()*Math.PI*2;
                 const phi = Math.acos(2*Math.random()-1);
                 spr.position.set(r*Math.sin(phi)*Math.cos(theta), r*Math.sin(phi)*Math.sin(theta)*0.7, r*Math.cos(phi));
-                const s = 1000 + Math.random()*1000;
+                const s = 800 + Math.random()*1200;
                 spr.scale.set(s, s, 1);
                 milkyWayGroup.add(spr);
             }
